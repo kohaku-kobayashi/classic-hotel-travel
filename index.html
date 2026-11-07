@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>名門クラシックホテル 悠久の旅路プランナー</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for soft sound cues -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            classic: {
+              navy: '#1A2A3A',
+              burgundy: '#5B1E2B',
+              gold: '#C5A059',
+              goldHover: '#B08B42',
+              cream: '#FDFBF7',
+              sand: '#F4EFE6',
+              wood: '#3D2817',
+              border: '#E2D8C8'
+            }
+          },
+          fontFamily: {
+            serif: ['"Noto Serif JP"', '"Yu Mincho"', '"Hiragino Mincho ProN"', 'serif'],
+            sans: ['"Hiragino Sans"', '"Meiryo"', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* 印刷時のレイアウト調整 */
+    @media print {
+      body { background-color: #ffffff !important; color: #000000 !important; font-size: 14pt !important; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .shadow-md, .shadow-xl { box-shadow: none !important; }
+      .bg-white { background: #ffffff !important; border: 1px solid #ccc !important; }
+    }
+    
+    /* スムーズなスクロールと基本スタイル */
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    /* カスタムラジオ風ボタンスタイル */
+    .option-card input:checked + div {
+      border-color: #C5A059;
+      background-color: #FAF4E8;
+      box-shadow: 0 4px 12px rgba(197, 160, 89, 0.25);
+    }
+    
+    .option-card input:checked + div .check-indicator {
+      border-color: #5B1E2B;
+      background-color: #5B1E2B;
+      color: white;
+    }
+
+    /* タイムラインの装飾 */
+    .timeline-line::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background-color: #C5A059;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body id="app-body" class="bg-[#F6F3EB] text-[#2C241E] font-sans antialiased min-h-screen flex flex-col text-base selection:bg-classic-gold selection:text-white">
+
+  <!-- ヘッダー（品格ある濃紺と金色） -->
+  <header class="bg-classic-navy text-white shadow-lg sticky top-0 z-40 border-b-2 border-classic-gold">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <!-- クラシックな建物を模したSVGロゴ -->
+        <div class="w-11 h-11 rounded-lg bg-classic-gold flex items-center justify-center text-classic-navy shadow-inner">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 2l7 8H5z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-serif tracking-wider font-bold text-[#FDFBF7]">
+            名門クラシックホテル <span class="text-classic-gold">悠久の旅路</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-gray-300 font-serif">
+            大人のための名建築・美食・歴史を愉しむ一泊二日の旅
+          </p>
+        </div>
+      </div>
+
+      <!-- 右側ツール：文字サイズ切り替え、音量、履歴比較ボタン -->
+      <div class="flex items-center space-x-3 no-print">
+        <!-- 文字サイズ調整（60代・シニア配慮） -->
+        <div class="flex items-center bg-[#243547] rounded-lg p-1 border border-gray-600 text-sm">
+          <span class="text-xs text-gray-300 px-2 font-medium">文字：</span>
+          <button onclick="setFontSize('normal')" id="btn-font-normal" class="px-2 py-1 rounded text-xs transition bg-classic-gold text-classic-navy font-bold">標準</button>
+          <button onclick="setFontSize('large')" id="btn-font-large" class="px-2 py-1 rounded text-xs transition hover:text-classic-gold text-gray-200">大</button>
+          <button onclick="setFontSize('xlarge')" id="btn-font-xlarge" class="px-2 py-1 rounded text-xs transition hover:text-classic-gold text-gray-200">特大</button>
+        </div>
+
+        <!-- 履歴・比較へのクイックジャンプ -->
+        <button onclick="scrollToHistory()" class="flex items-center space-x-1 bg-classic-burgundy hover:bg-[#722736] text-white px-3 py-1.5 rounded-lg text-sm border border-[#9A4252] shadow transition">
+          <svg class="w-4 h-4 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <span>比較・履歴 (<span id="header-history-count">0</span>)</span>
+        </button>
+
+        <!-- 効果音ON/OFF -->
+        <button onclick="toggleSound()" id="sound-btn" title="操作音の切替" class="p-2 rounded-lg bg-[#243547] text-gray-300 hover:text-white hover:bg-gray-700 transition">
+          <svg id="sound-icon-on" class="w-5 h-5 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"/>
+          </svg>
+          <svg id="sound-icon-off" class="w-5 h-5 text-gray-400 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+            <path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ領域 -->
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full">
+    
+    <!-- イントロダクション案内帯 -->
+    <div class="bg-white rounded-xl p-5 mb-8 border border-classic-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center space-x-2">
+          <span class="inline-block px-2.5 py-0.5 text-xs font-bold bg-classic-burgundy text-white rounded">伝統ホテル倶楽部 厳選10選</span>
+          <span class="text-xs text-gray-600 font-serif">日光・箱根・軽井沢・奈良・横浜・東京・蒲郡・雲仙・川奈・伊勢志摩</span>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-serif font-bold text-classic-navy">
+          心に残る、大人のためのクラシックホテル滞在をご提案
+        </h2>
+        <p class="text-sm sm:text-base text-gray-700 leading-relaxed font-serif">
+          急ぎ足の観光ではなく、歴史が紡がれた館内でゆったりと過ごし、土地の味と名所を味わう贅沢な一泊旅行をお仕立てします。<br class="hidden sm:inline">
+          条件を変えながら何度でも試行錯誤でき、作成した旅程は下に自動保存され、横並びで比較・検討いただけます。
+        </p>
+      </div>
+      <div class="flex-shrink-0 self-end md:self-center">
+        <a href="#planner-form" class="inline-flex items-center px-4 py-2.5 bg-classic-navy text-white rounded-lg text-sm font-serif font-medium shadow hover:bg-[#25394e] transition">
+          <span>条件を選んで計画する</span>
+          <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- 2カラム構成：左側に条件入力フォーム、右側に生成プラン詳細（スマホでは縦積み） -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- 左側：条件選択フォーム（幅5カラム） -->
+      <section id="planner-form" class="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
+        <div class="border-b border-classic-border pb-3 mb-5 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-6 bg-classic-burgundy rounded-sm"></span>
+            <h3 class="text-lg sm:text-xl font-serif font-bold text-classic-navy">
+              旅の条件を選択
+            </h3>
+          </div>
+          <span class="text-xs text-gray-500 font-sans">※タップまたはクリックで簡単選択</span>
+        </div>
+
+        <form id="travel-form" onsubmit="handleGeneratePlan(event)" class="space-y-6">
+          
+          <!-- 1. クラシックホテルの選択 -->
+          <div>
+            <label class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+              <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">1</span>
+              宿泊するクラシックホテル
+            </label>
+            <div class="relative">
+              <select id="hotelSelect" class="w-full p-3.5 bg-[#FAF7F0] border-2 border-[#D8CBB6] rounded-xl text-base text-gray-800 font-medium focus:ring-2 focus:ring-classic-gold focus:border-classic-gold transition">
+                <option value="auto" selected>✨【おまかせ】旅行の目的に最も合う名館を提案</option>
+                <optgroup label="── 日本の歴史を刻む名門10館 ──">
+                  <option value="nikko">日光金谷ホテル（栃木・明治6年創業 最古のリゾート）</option>
+                  <option value="fujiya">富士屋ホテル（箱根宮ノ下・明治11年創業 登録有形文化財）</option>
+                  <option value="mampei">万平ホテル（軽井沢・明治27年創業 避暑地の名門）</option>
+                  <option value="nara">奈良ホテル（奈良公園・明治42年創業 関西の迎賓館）</option>
+                  <option value="tokyo">東京ステーションホテル（東京駅・大正4年創業 重要文化財）</option>
+                  <option value="newgrand">ホテルニューグランド（横浜・昭和2年創業 山下公園前）</option>
+                  <option value="gamagori">蒲郡クラシックホテル（愛知・昭和9年創業 三河湾の絶景）</option>
+                  <option value="unzen">雲仙観光ホテル（長崎・昭和10年創業 スイス山小屋風）</option>
+                  <option value="kawana">川奈ホテル（静岡伊豆・昭和11年創業 海を望む名門）</option>
+                  <option value="shima">志摩観光ホテル（三重・昭和26年創業 英虞湾の絶景と夕陽）</option>
+                </optgroup>
+              </select>
+            </div>
+            <p class="text-xs text-gray-500 mt-1 pl-1">※迷われる場合は「おまかせ」をお選びください。目的に応じて選定します。</p>
+          </div>
+
+          <!-- 2. 旅行の主目的 -->
+          <div>
+            <label class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+              <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">2</span>
+              旅の主たる目的・過ごし方
+            </label>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <label class="option-card cursor-pointer">
+                <input type="radio" name="purpose" value="architecture" class="sr-only" checked>
+                <div class="p-3 border-2 border-gray-200 rounded-xl transition flex flex-col justify-between h-full bg-[#FAF9F5]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-bold text-classic-navy">🏛️ 名建築・歴史探訪</span>
+                    <span class="check-indicator w-4 h-4 border border-gray-300 rounded-full flex items-center justify-center text-[10px]">✓</span>
+                  </div>
+                  <span class="text-xs text-gray-600">重厚な意匠や文化財、往時の息吹を感じる</span>
+                </div>
+              </label>
+
+              <label class="option-card cursor-pointer">
+                <input type="radio" name="purpose" value="gourmet" class="sr-only">
+                <div class="p-3 border-2 border-gray-200 rounded-xl transition flex flex-col justify-between h-full bg-[#FAF9F5]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-bold text-classic-navy">🍷 伝統の美食・名酒</span>
+                    <span class="check-indicator w-4 h-4 border border-gray-300 rounded-full flex items-center justify-center text-[10px]">✓</span>
+                  </div>
+                  <span class="text-xs text-gray-600">受け継がれるフレンチや洋食、バーを満喫</span>
+                </div>
+              </label>
+
+              <label class="option-card cursor-pointer">
+                <input type="radio" name="purpose" value="nature" class="sr-only">
+                <div class="p-3 border-2 border-gray-200 rounded-xl transition flex flex-col justify-between h-full bg-[#FAF9F5]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-bold text-classic-navy">🌿 風光明媚・静養</span>
+                    <span class="check-indicator w-4 h-4 border border-gray-300 rounded-full flex items-center justify-center text-[10px]">✓</span>
+                  </div>
+                  <span class="text-xs text-gray-600">庭園や海・山の絶景を眺め、静かに寛ぐ</span>
+                </div>
+              </label>
+
+              <label class="option-card cursor-pointer">
+                <input type="radio" name="purpose" value="anniversary" class="sr-only">
+                <div class="p-3 border-2 border-gray-200 rounded-xl transition flex flex-col justify-between h-full bg-[#FAF9F5]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-bold text-classic-navy">💐 節目の旅・記念日</span>
+                    <span class="check-indicator w-4 h-4 border border-gray-300 rounded-full flex items-center justify-center text-[10px]">✓</span>
+                  </div>
+                  <span class="text-xs text-gray-600">夫婦の結婚記念や還暦祝い、感謝のひととき</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 3. 旅行の季節と宿泊数 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+                <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">3</span>
+                旅行の季節
+              </label>
+              <select id="seasonSelect" class="w-full p-3 bg-[#FAF7F0] border-2 border-[#D8CBB6] rounded-xl text-sm font-medium text-gray-800 focus:ring-classic-gold">
+                <option value="spring">🌸 春（桜の開花・新緑・過ごしやすい気候）</option>
+                <option value="summer">☀️ 夏（高原の清涼な風・海風と夕涼み）</option>
+                <option value="autumn" selected>🍁 秋（紅葉の情景・旬の味覚・散策の好季）</option>
+                <option value="winter">❄️ 冬（澄み渡る空気・雪景色・温まる湯）</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+                <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">4</span>
+                滞在スタイル
+              </label>
+              <select id="nightsSelect" class="w-full p-3 bg-[#FAF7F0] border-2 border-[#D8CBB6] rounded-xl text-sm font-medium text-gray-800 focus:ring-classic-gold">
+                <option value="1night" selected>一泊二日（ゆったり優雅な滞在）</option>
+                <option value="daytrip">日帰りプラン（ランチ＆館内鑑賞）</option>
+                <option value="2nights">二泊三日（連泊で周辺を深掘り）</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 4. 同行人数・性別・年代 -->
+          <div>
+            <label class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+              <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">5</span>
+              ご旅行者・同行の構成
+            </label>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="text-xs text-gray-600 block mb-1">人数</label>
+                <select id="travelersSelect" class="w-full p-2.5 bg-[#FAF7F0] border border-[#D8CBB6] rounded-lg text-sm text-gray-800">
+                  <option value="couple" selected>ご夫婦（2名）</option>
+                  <option value="solo">お一人様（1名）</option>
+                  <option value="friends">ご友人・親族（2〜3名）</option>
+                  <option value="group">グループ・家族（4名以上）</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-xs text-gray-600 block mb-1">年代</label>
+                <select id="ageSelect" class="w-full p-2.5 bg-[#FAF7F0] border border-[#D8CBB6] rounded-lg text-sm text-gray-800">
+                  <option value="60s" selected>60代（還暦・定年旅）</option>
+                  <option value="70s">70代以上（ゆったり重視）</option>
+                  <option value="50s">50代（大人のご褒美）</option>
+                  <option value="40s">40代以下</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-xs text-gray-600 block mb-1">ご本人の性別</label>
+                <select id="genderSelect" class="w-full p-2.5 bg-[#FAF7F0] border border-[#D8CBB6] rounded-lg text-sm text-gray-800">
+                  <option value="male" selected>男性</option>
+                  <option value="female">女性</option>
+                  <option value="other">問わない</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. 旅のペース配分 -->
+          <div>
+            <label class="block text-sm sm:text-base font-bold text-classic-navy mb-1.5 flex items-center">
+              <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">6</span>
+              移動と散策のペース
+            </label>
+            <div class="flex gap-4 text-sm">
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="radio" name="pace" value="relaxed" class="accent-classic-burgundy" checked>
+                <span class="text-gray-800">宿での滞在重視（足腰に優しく余裕のある行程）</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="radio" name="pace" value="active" class="accent-classic-burgundy">
+                <span class="text-gray-800">近隣名所も意欲的に巡る</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 生成ボタン -->
+          <div class="pt-2">
+            <button type="submit" id="generate-btn" class="w-full py-4 px-6 bg-classic-burgundy hover:bg-[#782435] active:bg-[#481420] text-white text-lg font-serif font-bold rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-[0.99] flex items-center justify-center space-x-2 border border-[#8B3042]">
+              <svg class="w-6 h-6 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+              </svg>
+              <span>この条件で旅プランを作成する</span>
+            </button>
+            <p class="text-center text-xs text-gray-500 mt-2 font-serif">
+              ※何度でも別のホテルや季節でお試しいただけます。プランは下部に記録されます。
+            </p>
+          </div>
+
+        </form>
+      </section>
+
+      <!-- 右側：生成されたプランの詳細（幅7カラム） -->
+      <section id="plan-detail-section" class="lg:col-span-7 space-y-6">
+        
+        <!-- プラン未生成時の案内プレースホルダー（初期状態は最新プランを表示） -->
+        <div id="plan-container" class="bg-white rounded-2xl border border-classic-border shadow-md p-6 sm:p-8 relative overflow-hidden transition-all duration-300">
+          <!-- JSで動的に差し込まれます -->
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- 履歴＆比較セクション（重要要件） -->
+    <section id="history-section" class="mt-12 pt-8 border-t-2 border-[#D8CBB6]">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-6 bg-classic-gold rounded-sm"></span>
+            <h3 class="text-xl sm:text-2xl font-serif font-bold text-classic-navy">
+              旅の試行錯誤・検討履歴
+            </h3>
+          </div>
+          <p class="text-sm text-gray-600 mt-1">
+            条件を変えて作成したプランが一覧で残ります。複数のプランを選んで並べて比較することができます。
+          </p>
+        </div>
+
+        <!-- 比較操作ボタン -->
+        <div class="flex items-center space-x-3 no-print">
+          <button onclick="compareSelectedPlans()" id="btn-compare" class="px-5 py-2.5 bg-classic-navy hover:bg-[#253d55] text-white rounded-xl text-sm font-serif font-bold shadow flex items-center space-x-2 border border-classic-gold transition">
+            <svg class="w-4 h-4 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+            </svg>
+            <span>選択したプランを比較する (<span id="compare-count">0</span>)</span>
+          </button>
+          <button onclick="clearHistory()" class="px-3 py-2 text-xs text-gray-500 hover:text-red-700 hover:underline">
+            履歴を消去
+          </button>
+        </div>
+      </div>
+
+      <!-- 履歴カード一覧グリッド -->
+      <div id="history-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
+        <!-- JSで履歴カードを動的生成 -->
+      </div>
+      
+      <!-- 履歴が0件の時のメッセージ -->
+      <div id="empty-history-msg" class="hidden text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+        <p class="text-gray-500 font-serif">まだ作成された旅プランの履歴はありません。「旅プランを作成する」ボタンを押すとこちらに蓄積されます。</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 比較モーダル（画面全面で横並び比較） -->
+  <div id="compare-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center p-3 sm:p-6 overflow-y-auto no-print">
+    <div class="bg-white w-full max-w-6xl rounded-2xl shadow-2xl border-2 border-classic-gold overflow-hidden my-auto max-h-[92vh] flex flex-col">
+      <!-- モーダルヘッダー -->
+      <div class="bg-classic-navy text-white px-6 py-4 flex items-center justify-between border-b border-classic-gold">
+        <div class="flex items-center space-x-2">
+          <svg class="w-6 h-6 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          <h3 class="text-xl font-serif font-bold tracking-wide">
+            旅プラン 比較検討表
+          </h3>
+        </div>
+        <button onclick="closeCompareModal()" class="text-gray-300 hover:text-white p-1 rounded-lg text-2xl font-bold leading-none">
+          &times;
+        </button>
+      </div>
+
+      <!-- モーダル比較コンテンツ（横スクロール可能テーブル） -->
+      <div class="p-4 sm:p-6 overflow-x-auto flex-grow" id="compare-modal-content">
+        <!-- JSで比較表を描画 -->
+      </div>
+
+      <!-- モーダルフッター -->
+      <div class="bg-[#FAF7F0] px-6 py-3 border-t border-classic-border flex items-center justify-between text-sm">
+        <span class="text-gray-600">比較結果を吟味して、お好みのプランをご家族との相談にお役立てください。</span>
+        <button onclick="closeCompareModal()" class="px-5 py-2 bg-classic-navy text-white rounded-lg hover:bg-gray-800">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- フッター -->
+  <footer class="bg-classic-navy text-gray-300 border-t-4 border-classic-gold mt-16 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-serif">
+      <div class="flex items-center space-x-3">
+        <span class="text-classic-gold font-bold">名門クラシックホテル 悠久の旅路倶楽部</span>
+        <span class="text-xs text-gray-400">| 大人の知性とゆとりを愉しむ旅</span>
+      </div>
+      <p class="text-xs text-gray-400 text-center md:text-right">
+        ※本アプリの旅程・歴史・名物案内は日本国内の代表的クラシックホテル（日本クラシックホテルの会加盟ホテル等）の公知情報に基づき作成された旅行提案シミュレーターです。
+      </p>
+    </div>
+  </footer>
+
+  <!-- 通知トーストメッセージ -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-classic-navy text-white px-5 py-3 rounded-xl shadow-2xl border border-classic-gold flex items-center space-x-3 text-sm">
+    <span id="toast-icon">✓</span>
+    <span id="toast-message">メッセージ</span>
+  </div>
+
+  <!-- JavaScript アプリケーションロジック -->
+  <script>
+    /* ====================================================================
+       1. クラシックホテル データベース（国内代表10館の詳細情報）
+       ==================================================================== */
+    const HOTELS_DATA = {
+      nikko: {
+        id: "nikko",
+        name: "日光金谷ホテル",
+        location: "栃木県 日光市（世界遺産 日光の社寺すぐ）",
+        founded: "明治6年（1873年）創業",
+        feature: "現存する日本最古のリゾートホテル。アインシュタインやヘレン・ケラーも滞在した、和洋折衷の美しい彫刻と格天井が彩る聖地。",
+        tagline: "世界遺産の森に抱かれた、時を超える木造クラシックリゾート",
+        themeColor: "#8C271E",
+        bgBadge: "bg-[#8C271E]",
+        suitedPurposes: ["architecture", "nature", "gourmet"],
+        highlights: [
+          "日光東照宮と同じ宮大工による緻密な和風彫刻と格天井",
+          "小食堂やメインダイニングに漂う明治・大正期の薫香",
+          "バー「デイサイト」で味わうシングルモルトと創業の物語"
+        ],
+        gourmet: {
+          dinner: "伝統のフランス料理「虹鱒のソテー 金谷風」または「特選とちぎ和牛フィレ肉のロースト」",
+          breakfast: "金谷ホテルのふんわりオムレツと、伝統の焼きたてロイヤルブレッド",
+          specialty: "大正時代のレシピを再現した「百年ライスカレー」"
+        },
+        souvenirs: [
+          { name: "金谷ホテルベーカリー ロイヤルブレッド", desc: "きめ細やかな口溶けとミルクの甘み。旅の定番として喜ばれる逸品。" },
+          { name: "百年ライスカレー（缶詰・レトルト詰め合わせ）", desc: "ココナッツミルクとスパイスが織りなす大正浪漫の深みある味。" },
+          { name: "日光名物・元祖日光湯波 または 日光羊羹", desc: "東照宮御用達の老舗が手がける、甘さ控えめで上品な銘菓。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:30", action: "東武日光駅に到着", detail: "特急スペーシアXで快適な移動。駅前でゆば料理の昼食。" },
+            { time: "13:00", action: "世界遺産「日光東照宮・輪王寺」参拝", detail: "陽明門の彫刻や眠り猫を拝観。石畳の杉並木をゆっくり散策。" },
+            { time: "15:30", action: "日光金谷ホテルにチェックイン", detail: "歴史あるロビーの彫刻や回転扉に迎えられ、客室へ。" },
+            { time: "16:30", action: "ホテル館内「歴史遺産ツアー」", detail: "スタッフの案内で館内の眠り猫似の彫刻やアインシュタインの足跡を巡る。" },
+            { time: "18:30", action: "メインダイニングで伝統ディナー", detail: "歴代料理長が受け継いできた名物「虹鱒のソテー 金谷風」を堪能。" },
+            { time: "21:00", action: "バー「デイサイト」で寛ぎの一杯", detail: "暖炉の温もりを感じながら、静かに更けゆく日光の夜を味わう。" }
+          ],
+          day2: [
+            { time: "08:00", action: "朝食：優雅な洋朝食", detail: "名物ロイヤルブレッドトーストと出来立てのオムレツに舌鼓。" },
+            { time: "09:30", action: "中禅寺湖畔・旧イタリア大使館別荘記念公園へ", detail: "いろは坂を抜け、昭和初期の外交官たちの避暑地建築を望む散策。" },
+            { time: "11:30", action: "ホテルへ戻りチェックアウト", detail: "売店でお土産のパンやカレー、木彫り細工を吟味。" },
+            { time: "12:30", action: "神橋のたもとで名物湯波ランチ", detail: "清流・大谷川を眺めながら静かな昼餉。" },
+            { time: "14:30", action: "東武日光駅より帰路へ", detail: "ゆったりとした座席で車窓の山並みを眺めつつ帰宅。" }
+          ]
+        }
+      },
+
+      fujiya: {
+        id: "fujiya",
+        name: "富士屋ホテル",
+        location: "神奈川県 箱根町・宮ノ下温泉",
+        founded: "明治11年（1878年）創業",
+        feature: "登録有形文化財。神社仏閣を思わせる本館・西洋館・花御殿が連なる、日本屈指の美を誇るリゾート。令和の大改修を経てさらに輝きを増す。",
+        tagline: "花御殿と社寺建築が競演する、箱根の薫り高き至宝",
+        themeColor: "#801B24",
+        bgBadge: "bg-[#801B24]",
+        suitedPurposes: ["architecture", "gourmet", "nature", "anniversary"],
+        highlights: [
+          "各室ごとに異なる花の名がつけられた昭和の傑作「花御殿」",
+          "格天井に描かれた636種の高山植物と千匹の雀",
+          "登録有形文化財の旧御用邸「菊華荘」の日本庭園"
+        ],
+        gourmet: {
+          dinner: "メインダイニングルーム「ザ・フジヤ」の伝統フレンチ または 旧御用邸「菊華荘」の会席料理",
+          breakfast: "吹き抜けの優美な空間で味わうクラシックスタイルのブレックファスト",
+          specialty: "ベーカリー「PICOT」のクラシックカレーパン＆アップルパイ"
+        },
+        souvenirs: [
+          { name: "ベーカリーPICOT アップルパイ＆カレーパン", desc: "シナモン香るジューシーなリンゴと秘伝パイ生地の絶品。" },
+          { name: "富士屋ホテル倶楽部 伝統のビーフカレー", desc: "牛肉と香味野菜をじっくり煮込んだ、深くまろやかな名ホテルの味。" },
+          { name: "箱根寄木細工の記念コースターや小物入れ", desc: "宮ノ下の職人技が光る、幾何学模様が美しい木工芸品。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:00", action: "小田原または箱根湯本から宮ノ下へ", detail: "箱根登山鉄道のスイッチバックを楽しみながら山あいの宮ノ下へ。" },
+            { time: "12:00", action: "宮ノ下セピア通りで名物ランチ", detail: "骨董店やレトロなカフェが並ぶ坂道をのんびり散策。" },
+            { time: "14:30", action: "富士屋ホテルにチェックイン", detail: "花御殿の意匠に息を呑み、歴史の息吹漂う客室で一服。" },
+            { time: "15:30", action: "ホテルミュージアム見学と庭園散策", detail: "館内の貴重な史料展示を巡り、水車小屋のある池泉回遊式庭園へ。" },
+            { time: "18:00", action: "メインダイニング「ザ・フジヤ」で夕食", detail: "登録有形文化財の社寺風吹き抜け天井の下で、伝統のフレンチコース。" },
+            { time: "20:30", action: "宮ノ下の名湯に浸かり、優雅な夜景を眺める", detail: "歴史ある源泉の湯で旅の疲れを心ゆくまで癒す。" }
+          ],
+          day2: [
+            { time: "08:00", action: "クラシックブレックファスト", detail: "焼きたてのクロワッサンとこだわり卵料理の朝餉。" },
+            { time: "09:30", action: "旧御用邸「菊華荘」で名園鑑賞", detail: "明治の皇族別邸の厳かな佇まいと手入れの行き届いた日本庭園を歩く。" },
+            { time: "11:00", action: "チェックアウト＆ベーカリーPICOTでお土産選び", detail: "人気のカレーパンやアップルパイを買い求める。" },
+            { time: "12:00", action: "彫刻の森美術館 または ポーラ美術館へ", detail: "緑豊かな箱根の自然と調和した名画や現代彫刻を鑑賞。" },
+            { time: "15:00", action: "箱根湯本駅よりロマンスカーで帰路へ", detail: "ゆったりとした特急座席で箱根路の余韻に浸る。" }
+          ]
+        }
+      },
+
+      mampei: {
+        id: "mampei",
+        name: "万平ホテル",
+        location: "長野県 北佐久郡軽井沢町",
+        founded: "明治27年（1894年）創業",
+        feature: "避暑地・軽井沢を象徴するアルプス館。ジョン・レノンが足繁く通い愛したカフェテラスと、落葉松の木立に囲まれた静謐な時間が魅力。",
+        tagline: "落葉松の風と珈琲の香り。文人墨客が愛した高原の名門",
+        themeColor: "#2F4858",
+        bgBadge: "bg-[#2F4858]",
+        suitedPurposes: ["nature", "gourmet", "architecture", "anniversary"],
+        highlights: [
+          "クラシックな格子窓とステンドグラスが美しいアルプス館",
+          "ジョン・レノン直伝のロイヤルミルクティーとアップルパイ",
+          "軽井沢彫りの桜や葡萄のレリーフが施されたクラシック家具"
+        ],
+        gourmet: {
+          dinner: "メインダイニングルームで味わう、信州野菜と信州プレミアム牛のフレンチ",
+          breakfast: "朝露に濡れる木立を眺めながらいただく、信州リンゴジュースとふわふわフレンチトースト",
+          specialty: "カフェテラス伝統の「信州産紅玉のアップルパイ」"
+        },
+        souvenirs: [
+          { name: "万平ホテルオリジナル アップルパイ", desc: "シナモン控えめで紅玉リンゴ本来の酸味と甘みが際立つ伝統の味。" },
+          { name: "信州フルーツジャム詰め合わせ", desc: "浅間山麓の恵みを受けた杏、ルバーブ、ブルーベリーの極上ジャム。" },
+          { name: "伝統の軽井沢彫り 銘々皿・コースター", desc: "万平ホテル館内を彩る彫刻と同じ、職人手彫りの木工芸品。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:00", action: "北陸新幹線にて軽井沢駅到着", detail: "澄み切った高原の空気を胸いっぱいに深呼吸。" },
+            { time: "11:45", action: "旧軽井沢銀座通りを気ままに散策", detail: "老舗のパン屋や手打ち蕎麦屋で名物の信州蕎麦をいただく。" },
+            { time: "14:00", action: "万平ホテルに到着・チェックイン", detail: "落葉松（カラマツ）の並木道を抜け、アルプス館の重厚なロビーへ。" },
+            { time: "15:00", action: "伝説のカフェテラスでティータイム", detail: "ジョン・レノンが愛したロイヤルミルクティーと名物アップルパイ。" },
+            { time: "16:30", action: "ホテル史料室と軽井沢彫りの調度品鑑賞", detail: "創業から現代に至る著名人たちの芳名録や調度品をゆっくり拝見。" },
+            { time: "18:30", action: "メインダイニングで正統派フレンチ", detail: "ステンドグラスに明かりが灯る中、信州の食材を散りばめた珠玉のコース。" }
+          ],
+          day2: [
+            { time: "07:30", action: "木漏れ日の中、雲場池（スワンレイク）へ散策", detail: "ホテルから徒歩圏内。水面に映る木々のリフレクションを堪能。" },
+            { time: "08:45", action: "爽やかな高原ブレックファスト", detail: "信州ハムや地元採れたて野菜、ホテルメイドのジャムを味わう。" },
+            { time: "11:00", action: "チェックアウト＆軽井沢タリアセンへ", detail: "塩沢湖のほとりにある睡骨庵やペイネ美術館をのんびり散策。" },
+            { time: "13:30", action: "軽井沢駅周辺でお土産の吟味", detail: "万平ホテルの焼き菓子や信州銘酒を買い揃える。" },
+            { time: "15:00", action: "新幹線にてゆったり帰路へ", detail: "車窓から浅間山を眺めながら、高原ステイの余韻に浸る。" }
+          ]
+        }
+      },
+
+      nara: {
+        id: "nara",
+        name: "奈良ホテル",
+        location: "奈良県 奈良市（奈良公園・春日大社一の鳥居そば）",
+        founded: "明治42年（1909年）創業",
+        feature: "「関西の迎賓館」として誕生。辰野金吾設計の桃山御殿風檜造り。オードリー・ヘップバーンや皇族方が愛した、古都の森に佇む木造建築の傑作。",
+        tagline: "辰野金吾が描いた和洋の美。神鹿が遊ぶ古都の迎賓館",
+        themeColor: "#613B28",
+        bgBadge: "bg-[#613B28]",
+        suitedPurposes: ["architecture", "nature", "history", "anniversary"],
+        highlights: [
+          "東京駅も手掛けた名建築家・辰野金吾による桃山風の破風屋根と赤絨毯",
+          "大階段の吹き抜けに配された鳥居付きの和風マントルピース（暖炉）",
+          "アインシュタインが弾いた100年前のピアノと名画の数々"
+        ],
+        gourmet: {
+          dinner: "メインダイニングルーム「三笠」の明治のレシピを昇華させたクラシックフレンチ",
+          breakfast: "奈良ホテルの伝統の朝食「大和の茶粥定食」または「アメリカンブレックファスト」",
+          specialty: "バー「ザ・バー」のシグネチャーカクテル「古都」"
+        },
+        souvenirs: [
+          { name: "奈良ホテル特製 クッキー缶（クラシック缶）", desc: "創業当時の正倉院宝相華文様をデザインした重厚な缶入りの焼き菓子。" },
+          { name: "奈良伝統・正倉院文様の麻布ふきん・小物", desc: "奈良晒の伝統を受け継ぐ、風合い豊かな蚊帳生地の工芸品。" },
+          { name: "奈良名物・柿の葉寿司 または 吉野葛切り", desc: "サバや鮭の旨味が染み渡る柿の葉寿司は新幹線の供にも最適。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:30", action: "近鉄奈良駅到着・ならまち散策", detail: "格子戸の町家が並ぶならまちを歩き、老舗で吉野葛や素麺の昼食。" },
+            { time: "13:30", action: "興福寺国宝館拝観", detail: "阿修羅像をはじめとする天平彫刻の至宝と対峙。" },
+            { time: "15:00", action: "奈良ホテルにチェックイン", detail: "奈良公園の小高い丘に建つ瓦屋根の殿堂へ。赤絨毯の大階段に迎えられる。" },
+            { time: "16:00", action: "館内アート＆建築ウォーク", detail: "上村松園や横山大観の名画、アインシュタインのピアノを鑑賞。" },
+            { time: "18:00", action: "ダイニング「三笠」で夕食", detail: "春日大社の緑を望む創業当時の空間で、極上のフレンチコース。" },
+            { time: "20:30", action: "バー「ザ・バー」で大人の語らい", detail: "歴代バーテンダーが紡ぐカクテルとともに古都の静寂を味わう。" }
+          ],
+          day2: [
+            { time: "07:30", action: "朝の奈良公園・春日大社参道の静かな散策", detail: "観光客がまだ少ない早朝、木立の中で神鹿たちに出会う神聖な朝。" },
+            { time: "08:45", action: "朝食：伝統の「茶粥定食」", detail: "大和の緑茶で炊き上げた温かな茶粥と色とりどりの小鉢で身体を整える。" },
+            { time: "10:30", action: "東大寺大仏殿・二月堂へ", detail: "大仏殿の威容を拝し、二月堂の舞台から奈良盆地を一望。" },
+            { time: "12:30", action: "ホテルショップでお買い物＆チェックアウト", detail: "人気のクッキー缶や奈良ホテルのオリジナルグッズを購入。" },
+            { time: "14:00", action: "京都または新大阪駅経由で帰路へ", detail: "古都の豊かな歴史の記憶とともに帰路につく。" }
+          ]
+        }
+      },
+
+      tokyo: {
+        id: "tokyo",
+        name: "東京ステーションホテル",
+        location: "東京都 千代田区・東京駅丸の内駅舎内",
+        founded: "大正4年（1915年）創業",
+        feature: "国指定重要文化財の赤レンガ駅舎に位置する唯一無二のホテル。文豪・川端康成や松本清張が執筆に滞在した、時を超えて息づく品格の空間。",
+        tagline: "重要文化財の赤レンガ駅舎に泊まる、文豪たちが愛した聖域",
+        themeColor: "#842A27",
+        bgBadge: "bg-[#842A27]",
+        suitedPurposes: ["architecture", "gourmet", "anniversary", "culture"],
+        highlights: [
+          "東京駅の壮麗な南北ドームのレリーフを間近に見下ろすドームサイド客室",
+          "松本清張が「点と線」の着想を得た歴史を物語る原稿用紙モチーフのメモ帳",
+          "赤レンガの壁面を活かした重厚なバー「カメリア」や「オーク」"
+        ],
+        gourmet: {
+          dinner: "レストラン「ブラン ルージュ」の現代フレンチ、または老舗すし割烹",
+          breakfast: "ゲストラウンジ「アトリウム」の天井高9mの天窓の下でいただく110種以上の贅沢ブッフェ",
+          specialty: "名物バーテンダーによる「東京ステーションホテル特製ハイボール」"
+        },
+        souvenirs: [
+          { name: "ホテルオリジナル「とらや」羊羹詰め合わせ", desc: "東京駅丸の内駅舎をモチーフにした限定パッケージの極上小形羊羹。" },
+          { name: "原稿用紙デザインのオリジナルステーショナリー", desc: "文豪ゆかりのホテルならではの便箋と万年筆インク。" },
+          { name: "帝国劇場・丸の内界隈の老舗名菓セレクション", desc: "皇居周辺散策の記念になる、洗練された東京土産。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "13:00", action: "東京駅に到着・丸の内駅舎を外から鑑賞", detail: "丸の内広場から辰野金吾が設計した三層赤レンガ駅舎の全景を撮影。" },
+            { time: "14:00", action: "皇居東御苑・和田倉噴水公園をゆったり散策", detail: "緑豊かな江戸城の石垣とお濠の風を感じる大人の散歩。" },
+            { time: "15:30", action: "東京ステーションホテルにチェックイン", detail: "駅の改札から直結の隠れ家のようなエントランスから上質な静けさへ。" },
+            { time: "16:30", action: "南北ドームのレリーフ鑑賞と館内散策", detail: "八角形ドームに飾られた干支のレリーフや鳳凰の彫刻を客室廊下から一望。" },
+            { time: "18:30", action: "フレンチ「ブラン ルージュ」で美食の夕べ", detail: "全国の厳選食材とシェフの技が光る繊細なフランス料理をワインとともに。" },
+            { time: "21:00", action: "名門バー「オーク」で夜を締めくくる", detail: "赤レンガの壁に囲まれたシックなカウンターで伝説のカクテルを一杯。" }
+          ],
+          day2: [
+            { time: "08:00", action: "アトリウムで至高のブレックファスト", detail: "赤レンガ駅舎の屋根裏空間に設けられた天窓からの朝光と絶品料理。" },
+            { time: "10:00", action: "東京ステーションギャラリーまたは三菱一号館へ", detail: "駅舎内の美術館で企画展を鑑賞。赤レンガの展示空間も必見。" },
+            { time: "12:00", action: "チェックアウト＆KITTE・丸の内で昼食", detail: "旧東京中央郵便局の郵便局長室を見学し、東京駅を望むテラスへ。" },
+            { time: "14:00", action: "丸ビル・新丸ビルでお土産選び", detail: "限定のスイーツやお茶を選び、新幹線へスムーズに乗車。" }
+          ]
+        }
+      },
+
+      newgrand: {
+        id: "newgrand",
+        name: "ホテルニューグランド",
+        location: "神奈川県 横浜市中区・山下公園前",
+        founded: "昭和2年（1927年）創業",
+        feature: "マッカーサー元帥やチャップリンが愛した横浜開港のシンボル。山下公園と横浜港を望み、ドリア、ナポリタン、プリン・ア・ラ・モードを生んだ洋食の揺籃。",
+        tagline: "潮風と波音に揺れる洋食発祥の地。横浜モダンクラシック",
+        themeColor: "#1B3B6F",
+        bgBadge: "bg-[#1B3B6F]",
+        suitedPurposes: ["gourmet", "architecture", "history", "anniversary"],
+        highlights: [
+          "本館ロビーの青い絨毯と大階段、横浜家具と天女奏楽之図のタペストリー",
+          "マッカーサー元帥が執務室として使用した「マッカーサーズスイート」",
+          "山下公園と氷川丸、横浜港を行き交う船を一望するオーシャンビュー"
+        ],
+        gourmet: {
+          dinner: "パノラミックレストラン「ル・ノルマンディ」の正統派フレンチ または「ザ・カフェ」",
+          breakfast: "港の朝日を眺めながらいただく「ル・ノルマンディ」の極上オムレツ",
+          specialty: "発祥の味「シーフードドリア」「スパゲッティナポリタン」「プリン・ア・ラ・モード」"
+        },
+        souvenirs: [
+          { name: "ホテルニューグランド レトルト発祥のドリアソース＆カレー", desc: "初代料理長サリー・ワイルが考案したクリーミーなベシャメルソース。" },
+          { name: "オリジナル ラムボール または レトロ缶入りクッキー", desc: "芳醇なラム酒の香りと濃厚なチョコレートが織りなす大人の洋菓子。" },
+          { name: "横浜元町・近沢レース店の記念ハンカチ", desc: "港町横浜の歴史を感じさせる上品なレース小物。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "12:00", action: "元町・中華街駅に到着・山手西洋館めぐり", detail: "港の見える丘公園、イギリス館やエリスマン邸のレトロ洋館を散策。" },
+            { time: "14:00", action: "山下公園の海風を感じながらホテルへ", detail: "係留された氷川丸とベイブリッジを眺めつつホテルニューグランドへ。" },
+            { time: "14:30", action: "ホテルニューグランドにチェックイン", detail: "本館の大階段を上り、フェニックスルームの重厚な意匠に感嘆。" },
+            { time: "15:30", action: "「ザ・カフェ」で発祥のプリン・ア・ラ・モード", detail: "横長のガラス器にフルーツが並ぶ元祖プリン・ア・ラ・モードに舌鼓。" },
+            { time: "18:00", action: "「ル・ノルマンディ」で豪華客船のようなディナー", detail: "フランス客船ノルマンディ号を模した空間で、港の夜景とフレンチを満喫。" },
+            { time: "20:30", action: "バー「シーガーディアンII」でサボイ・カクテル", detail: "作家・サザンオールスターズの曲でも知られる名バーでヨコハマカクテル。" }
+          ],
+          day2: [
+            { time: "08:00", action: "爽やかな港の朝食", detail: "朝日がきらめく横浜港を眺めながら焼きたてクロワッサンと卵料理。" },
+            { time: "09:30", action: "氷川丸の見学または赤レンガ倉庫へ散策", detail: "昭和の豪華客船の船内をじっくり見学。アールデコ調の一等食堂。" },
+            { time: "11:30", action: "チェックアウト＆本館ロビーで記念撮影", detail: "重厚な椅子に腰掛け、横浜モダンの思い出をカメラに収める。" },
+            { time: "12:30", action: "「ザ・カフェ」で発祥のシーフードドリア", detail: "旅の締めくくりに、エビとホタテが香る元祖ドリアのランチ。" },
+            { time: "14:30", action: "横浜駅より東海道線・新幹線で帰路へ", detail: "開港の浪漫あふれる旅を振り返りつつ帰路へ。" }
+          ]
+        }
+      },
+
+      gamagori: {
+        id: "gamagori",
+        name: "蒲郡クラシックホテル",
+        location: "愛知県 蒲郡市・竹島海岸",
+        founded: "昭和9年（1934年）創業",
+        feature: "三河湾国定公園の絶景を望む城郭風建築。緑の瓦屋根とアールデコ調の調度品が見事に融合し、国の登録有形文化財にも指定された名宿。",
+        tagline: "三河湾と霊峰竹島を一望する、城郭造りのアールデコ名館",
+        themeColor: "#2C5E43",
+        bgBadge: "bg-[#2C5E43]",
+        suitedPurposes: ["nature", "architecture", "gourmet", "anniversary"],
+        highlights: [
+          "城郭風の城天守を思わせる重厚な外観と、室内を彩る華麗なアールデコ意匠",
+          "ホテル眼下に広がる青い三河湾と天然記念物「竹島」を望むパノラマ",
+          "春のツツジ庭園（約3,000本が咲き誇る絶景）と四季の彩り"
+        ],
+        gourmet: {
+          dinner: "メインダイニングでの三河湾の海の幸と「みかわ牛」のフレンチコース",
+          breakfast: "三河湾の朝凪を眺めながらいただく、地場野菜と温かいスープの洋朝食",
+          specialty: "三河湾名物の伊勢海老・平目・鮑を使ったクラシックブイヤベース"
+        },
+        souvenirs: [
+          { name: "蒲郡クラシックホテル特製 焼き菓子アソート", desc: "ホテルの優美な外観が描かれたクラシック缶入りのガレットとサブレ。" },
+          { name: "三河湾産 焼海苔・えびせんべい銘菓", desc: "豊かな三河の磯の香りが凝縮された、酒の肴にも最高の手土産。" },
+          { name: "竹島八百富神社の開運厄除け守り", desc: "日本七弁天の一つである竹島神社で授かる由緒あるお守り。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "12:00", action: "蒲郡駅に到着・三河湾の海鮮ランチ", detail: "地魚の海鮮丼や名物めひかりの唐揚げを堪能。" },
+            { time: "13:30", action: "竹島橋を渡り「竹島」へ参拝", detail: "長さ387mの橋を渡り、島全体が天然記念物の八百富神社へ。" },
+            { time: "15:00", action: "蒲郡クラシックホテルにチェックイン", detail: "小高い丘の上にそびえる城郭風建築へ。ロビーのアールデコ照明が迎える。" },
+            { time: "16:00", action: "広大な庭園散策とラウンジティー", detail: "三河湾を見晴らす庭園を歩き、ラウンジ「アゼリア」で絶景紅茶タイム。" },
+            { time: "18:30", action: "メインダイニングでフレンチディナー", detail: "三河湾で獲れた新鮮な魚介と厳選みかわ牛をソムリエ厳選ワインとともに。" },
+            { time: "21:00", action: "夜の竹島橋ライトアップをバルコニーから眺望", detail: "海風を感じながら静寂な三河湾の夜景を満喫。" }
+          ],
+          day2: [
+            { time: "07:30", action: "日の出に輝く三河湾を望む優雅な朝食", detail: "穏やかな海を走る漁船を遠くに眺めつつ、ホテルメイドの洋朝食。" },
+            { time: "09:30", action: "竹島水族館 または 蒲郡市生命の海科学館見学", detail: "深海魚で全国的に有名な竹島水族館でユニークな展示を楽しむ。" },
+            { time: "11:30", action: "チェックアウト＆ホテル特製土産の購入", detail: "売店で名物クッキーや三河木綿の布製品を記念に選ぶ。" },
+            { time: "13:00", action: "豊橋または名古屋経由で帰路へ", detail: "東海道新幹線で心地よい疲れとともに帰宅。" }
+          ]
+        }
+      },
+
+      unzen: {
+        id: "unzen",
+        name: "雲仙観光ホテル",
+        location: "長崎県 雲仙市・雲仙温泉",
+        founded: "昭和10年（1935年）創業",
+        feature: "外国人避暑客のために建てられた日本最初の国立公園リゾート。スイス・シャレー（山小屋）風のハーフティンバー様式と源泉かけ流しの硫黄泉が魅力。",
+        tagline: "スイス山小屋風の木の温もり。硫黄香る雲仙の温泉遺産",
+        themeColor: "#4E2E1E",
+        bgBadge: "bg-[#4E2E1E]",
+        suitedPurposes: ["nature", "architecture", "gourmet", "anniversary"],
+        highlights: [
+          "スイス山小屋風のハーフティンバー外観と丸太梁が交差する大吹き抜け",
+          "手斧（ちょうな）削りの階段手すりやステンドグラスの温かみ",
+          "アールデコ調のタイル張りが美しい源泉かけ流しのドーム温泉浴室"
+        ],
+        gourmet: {
+          dinner: "ダイニングルームで味わう、長崎の山海の幸を活かした雲仙フレンチ",
+          breakfast: "クラシックな空間でいただく、雲仙の新鮮卵と地元野菜の朝食",
+          specialty: "バー「The Bar」で燻製ナッツと味わう長崎ゆかりのカクテル"
+        },
+        souvenirs: [
+          { name: "雲仙観光ホテルオリジナル パウンドケーキ", desc: "ドライフルーツとバターの風味がぎっしり詰まった重厚な焼き菓子。" },
+          { name: "雲仙名物・湯せんぺい（手焼き）", desc: "温泉水を使って焼き上げる、サクサクと香ばしい伝統銘菓。" },
+          { name: "長崎カステラの老舗謹製 特製五三焼", desc: "卵黄を贅沢に使い、底にザラメが敷かれた最高峰のカステラ。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "12:00", action: "諫早駅よりレンタカーまたはバスで雲仙へ", detail: "橘湾の絶景ロードをドライブしながら標高700mの雲仙高原へ。" },
+            { time: "13:30", action: "雲仙地獄めぐり", detail: "白い噴煙と硫黄の香りが立ち込める地獄地帯を木道に沿って見学。" },
+            { time: "15:00", action: "雲仙観光ホテルにチェックイン", detail: "山小屋風の緑屋根と丸太梁のエントランス。ビリヤード室や図書室が迎える。" },
+            { time: "16:00", action: "名湯・アールデコタイルの大浴場で湯あみ", detail: "天井の高いレトロなドーム風呂で、白濁した硫黄泉に心身を委ねる。" },
+            { time: "18:30", action: "ダイニングルームで伝統フレンチ", detail: "島原半島の豊かな土壌で育った野菜と長崎の新鮮魚介を堪能。" },
+            { time: "21:00", action: "バーで暖炉の薪が爆ぜる音に耳を傾ける", detail: "クラシックな蓄音機が飾られた空間で、落ち着いた大人の夜景。" }
+          ],
+          day2: [
+            { time: "08:00", action: "山あいの澄んだ空気の中での朝食", detail: "焼きたての香ばしいパンと地場産ミルク、出来立てオムレツ。" },
+            { time: "09:30", action: "図書室でクラシックな蔵書をめくる", detail: "昔の外国人観光客が残した洋書や旅の写真集に触れる静かな時間。" },
+            { time: "11:00", action: "チェックアウト＆仁田峠へ", detail: "雲仙ロープウェイに乗り、妙見岳から有明海と普賢岳の火口を望む。" },
+            { time: "13:30", action: "島原城下町散策・名物具雑煮の昼食", detail: "湧水が流れる武家屋敷街を歩き、出汁の効いた郷土料理に舌鼓。" },
+            { time: "16:00", action: "長崎空港または長崎駅より帰路へ", detail: "異国情緒と温泉のぬくもりを胸に帰路につく。" }
+          ]
+        }
+      },
+
+      kawana: {
+        id: "kawana",
+        name: "川奈ホテル",
+        location: "静岡県 伊東市・川奈海岸",
+        founded: "昭和11年（1936年）創業",
+        feature: "大倉喜七郎男爵が英国のカントリーハウスを模して築いた海の上の城。世界トップ100に選ばれる名門ゴルフコースと、相模湾・富士山を一望する景観。",
+        tagline: "大倉男爵の夢が息づく。富士と相模湾を望む海辺の英国調リゾート",
+        themeColor: "#1E3F5A",
+        bgBadge: "bg-[#1E3F5A]",
+        suitedPurposes: ["nature", "gourmet", "anniversary", "architecture"],
+        highlights: [
+          "赤瓦屋根と白壁、英国カントリーハウスの趣を持つ大広間ロビー",
+          "富士コース・大島コースを眼下に見下ろす展望台からの360度絶景",
+          "歴史あるステンドグラスと暖炉が調和するサンパーラー"
+        ],
+        gourmet: {
+          dinner: "メインダイニングでのクラシックフレンチ または 伊豆の海の幸を味わう和会席「田舎屋」",
+          breakfast: "相模湾の水平線を望みながらいただく、ホテル特製フレンチトーストとフレッシュジュース",
+          specialty: "昭和初期から引き継がれる「川奈特製フルーツケーキ」"
+        },
+        souvenirs: [
+          { name: "川奈ホテル伝統 フルーツケーキ（木箱入り）", desc: "洋酒にじっくり漬け込んだレーズンやナッツが贅沢に詰まった至宝。" },
+          { name: "川奈オリジナル ゴルフグッズ（マーカー・キャップ）", desc: "名門コースのロゴが入った、ゴルフ好きの知人に喜ばれる品。" },
+          { name: "伊豆特産・わさび漬け または 桜えび煎餅", desc: "天城山麓の清流で育った本わさびを使ったピリッと爽やかな名産品。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:30", action: "熱海または伊東駅に特急踊り子号で到着", detail: "車窓から青い相模湾を眺めながらの快適な鉄道旅。" },
+            { time: "12:30", action: "伊東港周辺で金目鯛の煮付けランチ", detail: "伊豆名物の脂がのった金目鯛の甘辛煮を白飯とともに堪能。" },
+            { time: "14:30", action: "川奈ホテルにチェックイン", detail: "松林のワインディングロードを抜け、白亜の英国風カントリーハウスへ。" },
+            { time: "15:30", action: "展望台登頂とサンパーラーでのティータイム", detail: "相模湾、伊豆大島、そして富士山を望む絶景パノラマに息を呑む。" },
+            { time: "18:00", action: "メインダイニングで伝統のディナー", detail: "重厚なシャンデリアの下、伊豆の伊勢海老やあしたか牛を味わう。" },
+            { time: "20:30", action: "温泉施設「ブリサ マリナ」で海風の露天風呂", detail: "水平線に浮かぶ漁火（いさりび）を眺めながら極上の温泉浴。" }
+          ],
+          day2: [
+            { time: "07:00", action: "朝日に輝く富士コースと相模湾の散策", detail: "海沿いの名門コースの緑と、波打ち際の朝の静けさを楽しむ。" },
+            { time: "08:15", action: "サンパーラーで朝食", detail: "光が差し込むガラス張りの空間で、名物フレンチトーストを堪能。" },
+            { time: "10:00", action: "歴史展示室（川奈の歩みと大倉喜七郎男爵の生涯）鑑賞", detail: "昭和の激動期にマリリン・モンローも訪れた歴史をたどる。" },
+            { time: "11:30", action: "チェックアウト＆城ヶ崎海岸の吊り橋へ", detail: "断崖絶壁に架かる門脇吊り橋でスリリングな絶景と潮騒を体感。" },
+            { time: "14:00", action: "伊東駅よりサフィール踊り子号等で優雅に帰路へ", detail: "伊豆の豊かな自然とクラシックホテルの余韻に浸る。" }
+          ]
+        }
+      },
+
+      shima: {
+        id: "shima",
+        name: "志摩観光ホテル（ザ クラシック）",
+        location: "三重県 志摩市・阿児町賢島",
+        founded: "昭和26年（1951年）創業",
+        feature: "伊勢志摩国立公園・英虞湾を望む名門。伊勢志摩サミット2016の主会場となり、山崎豊子の小説『華麗なる一族』の舞台としても名高い極上のリゾート。",
+        tagline: "英虞湾の夕陽とリアス海岸の奇跡。伊勢志摩サミットの舞台",
+        themeColor: "#223B4A",
+        bgBadge: "bg-[#223B4A]",
+        suitedPurposes: ["nature", "gourmet", "anniversary", "history"],
+        highlights: [
+          "サミット首脳陣が並んで記念撮影を行った屋上庭園からの夕陽",
+          "名建築家・村野藤吾が手掛けた温もりある優雅な建築意匠",
+          "英虞湾に沈みゆく日本屈指の夕景を望むゲストラウンジ"
+        ],
+        gourmet: {
+          dinner: "レストラン「ラ・メール ザ クラシック」の海の幸フランス料理",
+          breakfast: "穏やかな英虞湾を眺めながらいただく、鮑のコンソメスープ付き洋朝食",
+          specialty: "ホテル伝統の「伊勢海老のビスク」と「鮑のステーキ」"
+        },
+        souvenirs: [
+          { name: "志摩観光ホテル謹製 伊勢海老のビスク（缶詰）", desc: "伊勢海老の濃厚な旨味とコニャックの香りが凝縮された伝統のスープ。" },
+          { name: "伊勢名物・赤福餅 または 銘菓お福餅", desc: "三重の旅に欠かせない、きめ細かなこし餡とお餅の絶妙な調和。" },
+          { name: "英虞湾産 本真珠（アコヤ真珠）のタイタック・ブローチ", desc: "賢島ならではの気品ある輝き。奥様への記念の贈り物にも最適。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "12:00", action: "近鉄観光特急「しまかぜ」で賢島駅へ到着", detail: "プレミアムシートでカフェ車両のスイーツを楽しみながら賢島へ。" },
+            { time: "13:00", action: "賢島エスパーニャクルーズで英虞湾遊覧", detail: "リアス海岸の美しい島々と真珠筏（いかだ）を巡る爽快なクルーズ。" },
+            { time: "14:45", action: "志摩観光ホテル ザ クラシックにチェックイン", detail: "村野藤吾設計の柔らかな木の空間。ゲストラウンジでウェルカムドリンク。" },
+            { time: "16:30", action: "屋上庭園でサミット首脳陣が眺めた夕陽を待つ", detail: "刻一刻と茜色から藍色へと染まる英虞湾の夕暮れは息を呑む絶景。" },
+            { time: "18:30", action: "「ラ・メール」で海の幸フランス料理", detail: "名物「伊勢海老のビスク」と「鮑のステーキ」を極上ワインと味わう至福。" },
+            { time: "21:00", action: "カフェ＆ワインバー「リエーブル」で穏やかな夜", detail: "山崎豊子氏が執筆したデスクが残る「ザ クラブ」を静かに見学。" }
+          ],
+          day2: [
+            { time: "07:30", action: "英虞湾の真珠養殖筏を望む爽やかな朝食", detail: "朝の光を浴びながら、贅沢なコンソメや地元食材のオムレツを賞味。" },
+            { time: "09:00", action: "伊勢神宮（内宮・おはらい町・おかげ横丁）へ", detail: "ホテル専用車または近鉄特急で宇治山田へ。2000年の歴史を持つ聖地参拝。" },
+            { time: "12:00", action: "おかげ横丁で名物「伊勢うどん」と「てこね寿司」", detail: "黒い濃厚なタレと極太麺、カツオの漬け丼で三重の味覚を堪能。" },
+            { time: "14:00", action: "赤福本店でお茶と赤福餅のひと休み", detail: "五十鈴川の清流を眺めながら作りたての赤福を味わう。" },
+            { time: "15:30", action: "近鉄特急にて名古屋・京都・大阪方面へ帰路へ", detail: "伊勢路の神聖な祈りと名門ホテルのもてなしに満たされて。" }
+          ]
+        }
+      }
+    };
+
+    /* ====================================================================
+       2. アプリケーション状態管理
+       ==================================================================== */
+    let currentPlan = null;
+    let historyPlans = [];
+    let selectedForCompare = new Set();
+    let isSoundOn = true;
+    let currentFontSize = 'normal'; // normal, large, xlarge
+
+    // ユーザー向けの音声演出（Tone.js）
+    function playChime(type = 'bell') {
+      if (!isSoundOn) return;
+      try {
+        if (Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+        synth.volume.value = -12;
+        if (type === 'bell') {
+          synth.triggerAttackRelease(["E5", "B5"], "8n");
+        } else if (type === 'create') {
+          synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "16n");
+        } else if (type === 'click') {
+          const clickSynth = new Tone.MembraneSynth().toDestination();
+          clickSynth.volume.value = -18;
+          clickSynth.triggerAttackRelease("C3", "32n");
+        }
+      } catch (e) {
+        // 音声ブロック環境へのフォールバック
+      }
+    }
+
+    /* ====================================================================
+       3. フォントサイズ変更（シニア・60代男性配慮）
+       ==================================================================== */
+    function setFontSize(size) {
+      currentFontSize = size;
+      const body = document.getElementById('app-body');
+      
+      // リセット
+      body.classList.remove('text-base', 'text-lg', 'text-xl');
+      
+      // ボタンのスタイル更新
+      document.querySelectorAll('#btn-font-normal, #btn-font-large, #btn-font-xlarge').forEach(btn => {
+        btn.classList.remove('bg-classic-gold', 'text-classic-navy', 'font-bold');
+        btn.classList.add('text-gray-200');
+      });
+
+      if (size === 'normal') {
+        body.classList.add('text-base');
+        document.getElementById('btn-font-normal').classList.add('bg-classic-gold', 'text-classic-navy', 'font-bold');
+      } else if (size === 'large') {
+        body.classList.add('text-lg');
+        document.getElementById('btn-font-large').classList.add('bg-classic-gold', 'text-classic-navy', 'font-bold');
+      } else if (size === 'xlarge') {
+        body.classList.add('text-xl');
+        document.getElementById('btn-font-xlarge').classList.add('bg-classic-gold', 'text-classic-navy', 'font-bold');
+      }
+      playChime('click');
+      showToast(`文字サイズを【${size === 'normal' ? '標準' : size === 'large' ? '大' : '特大'}】に設定しました`);
+    }
+
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      document.getElementById('sound-icon-on').classList.toggle('hidden', !isSoundOn);
+      document.getElementById('sound-icon-off').classList.toggle('hidden', isSoundOn);
+      showToast(`効果音を${isSoundOn ? '有効' : '消音'}にしました`);
+    }
+
+    function showToast(message, icon = "✓") {
+      const toast = document.getElementById('toast');
+      const msgEl = document.getElementById('toast-message');
+      const iconEl = document.getElementById('toast-icon');
+      msgEl.textContent = message;
+      iconEl.textContent = icon;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2600);
+    }
+
+    /* ====================================================================
+       4. プラン生成ロジック
+       ==================================================================== */
+    function handleGeneratePlan(e) {
+      if (e) e.preventDefault();
+      playChime('create');
+
+      const hotelKey = document.getElementById('hotelSelect').value;
+      const purpose = document.querySelector('input[name="purpose"]:checked').value;
+      const season = document.getElementById('seasonSelect').value;
+      const nights = document.getElementById('nightsSelect').value;
+      const travelers = document.getElementById('travelersSelect').value;
+      const age = document.getElementById('ageSelect').value;
+      const gender = document.getElementById('genderSelect').value;
+      const pace = document.querySelector('input[name="pace"]:checked').value;
+
+      // ホテルの決定（「おまかせ」の場合は目的・季節に合わせて最適選定）
+      let selectedHotelKey = hotelKey;
+      if (selectedHotelKey === 'auto') {
+        if (purpose === 'architecture') {
+          selectedHotelKey = (season === 'autumn') ? 'nara' : 'fujiya';
+        } else if (purpose === 'gourmet') {
+          selectedHotelKey = 'newgrand';
+        } else if (purpose === 'nature') {
+          selectedHotelKey = (season === 'summer') ? 'mampei' : 'gamagori';
+        } else if (purpose === 'anniversary') {
+          selectedHotelKey = 'shima';
+        } else {
+          selectedHotelKey = 'nikko';
+        }
+      }
+
+      const hotel = HOTELS_DATA[selectedHotelKey];
+      
+      // プランタイトルの生成
+      const seasonNames = { spring: 'うららかな春光', summer: '緑深き夏の涼景', autumn: '錦秋を愛でる', winter: '静謐なる冬の気品' };
+      const purposeNames = { architecture: '名建築と歴史の足跡を巡る', gourmet: '創業の伝統洋食と美酒を味わう', nature: '名園と絶景に憩う', anniversary: '感謝と節目の記念に贈る' };
+      const travelerLabel = { couple: 'ご夫婦水入らず', solo: '男一人の気ままな贅沢', friends: '旧友と語らう', group: 'ご家族揃っての' }[travelers];
+      
+      const planTitle = `${hotel.name}で過ごす ${seasonNames[season]}の休日 〜${purposeNames[purpose]}〜`;
+
+      const newPlan = {
+        id: "plan_" + Date.now(),
+        createdAt: new Date().toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        hotelKey: selectedHotelKey,
+        hotelName: hotel.name,
+        location: hotel.location,
+        founded: hotel.founded,
+        tagline: hotel.tagline,
+        purpose,
+        season,
+        nights,
+        travelers,
+        age,
+        gender,
+        pace,
+        title: planTitle,
+        hotelData: hotel,
+        memo: ""
+      };
+
+      currentPlan = newPlan;
+      
+      // 履歴配列の先頭に追加
+      historyPlans.unshift(newPlan);
+      
+      // 画面反映
+      renderCurrentPlan(newPlan);
+      renderHistoryCards();
+      updateCompareUI();
+
+      // 詳細セクションへ滑らかに案内
+      const detailEl = document.getElementById('plan-detail-section');
+      if (window.innerWidth < 1024) {
+        detailEl.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      showToast(`「${hotel.name}」の旅行プランを作成・保存しました`);
+    }
+
+    /* ====================================================================
+       5. プラン詳細画面の描画（品格・60代男性に優しいレイアウト）
+       ==================================================================== */
+    function renderCurrentPlan(plan) {
+      const h = plan.hotelData;
+      const seasonJP = { spring: '春（桜・新緑）', summer: '夏（高原・海風）', autumn: '秋（紅葉・味覚）', winter: '冬（澄んだ空気・湯）' }[plan.season];
+      const purposeJP = { architecture: '🏛️ 名建築・歴史探訪', gourmet: '🍷 伝統の美食・名酒', nature: '🌿 風光明媚・静養', anniversary: '💐 節目の旅・記念日' }[plan.purpose];
+      const paceJP = plan.pace === 'relaxed' ? 'ゆったり優雅（足腰に優しい行程）' : '名所意欲的散策';
+
+      const html = `
+        <div class="border-b-2 border-classic-gold pb-4 mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white ${h.bgBadge}">
+              ${h.founded}
+            </span>
+            <div class="flex items-center space-x-2 text-xs sm:text-sm text-gray-500 font-serif">
+              <span>作成日: ${plan.createdAt}</span>
+              <span>•</span>
+              <span class="text-classic-burgundy font-bold">${purposeJP}</span>
+            </div>
+          </div>
+          
+          <h2 class="text-2xl sm:text-3xl font-serif font-bold text-classic-navy leading-tight">
+            ${plan.title}
+          </h2>
+          <p class="text-base sm:text-lg font-serif text-classic-goldHover mt-1 italic">
+            「${h.tagline}」
+          </p>
+          <p class="text-xs sm:text-sm text-gray-600 mt-1">
+            📍 所在地: ${h.location}
+          </p>
+        </div>
+
+        <!-- 旅の基本概要バッジ -->
+        <div class="bg-[#FAF7F0] p-4 rounded-xl border border-classic-border mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div class="border-r border-gray-300 pr-2">
+            <span class="text-xs text-gray-500 block">滞在形式</span>
+            <span class="text-sm font-bold text-classic-navy">${plan.nights === '1night' ? '一泊二日' : plan.nights === 'daytrip' ? '日帰り優雅' : '二泊三日'}</span>
+          </div>
+          <div class="border-r border-gray-300 pr-2">
+            <span class="text-xs text-gray-500 block">季節</span>
+            <span class="text-sm font-bold text-classic-navy">${seasonJP}</span>
+          </div>
+          <div class="border-r border-gray-300 pr-2">
+            <span class="text-xs text-gray-500 block">同行</span>
+            <span class="text-sm font-bold text-classic-navy">${plan.travelers === 'couple' ? 'ご夫婦2名' : plan.travelers === 'solo' ? 'お一人様' : 'ご友人・家族'}</span>
+          </div>
+          <div>
+            <span class="text-xs text-gray-500 block">散策ペース</span>
+            <span class="text-sm font-bold text-classic-navy">${plan.pace === 'relaxed' ? 'ゆったり安心' : '名所巡り'}</span>
+          </div>
+        </div>
+
+        <!-- ホテルの由緒と見どころ -->
+        <div class="mb-8">
+          <h4 class="text-base sm:text-lg font-serif font-bold text-classic-navy mb-2 flex items-center">
+            <span class="w-2.5 h-5 bg-classic-gold rounded-sm mr-2"></span>
+            この宿で味わうべき「歴史と名建築の魅力」
+          </h4>
+          <p class="text-sm sm:text-base text-gray-700 leading-relaxed font-serif bg-[#FCFAF6] p-4 rounded-xl border-l-4 border-classic-gold">
+            ${h.feature}
+          </p>
+
+          <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+            ${h.highlights.map(item => `
+              <div class="bg-white p-2.5 rounded-lg border border-gray-200 flex items-start space-x-1.5 shadow-sm">
+                <span class="text-classic-gold font-bold">◆</span>
+                <span class="text-gray-800 font-medium">${item}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 旅程スケジュール（1日目＆2日目） -->
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-base sm:text-lg font-serif font-bold text-classic-navy flex items-center">
+              <span class="w-2.5 h-5 bg-classic-burgundy rounded-sm mr-2"></span>
+              大人のための ゆったり旅程スケジュール
+            </h4>
+            <span class="text-xs text-gray-500 font-sans">※無理のない移動と休憩を確保</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- 1日目 -->
+            <div class="bg-white p-5 rounded-xl border border-classic-border shadow-sm">
+              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
+                <span class="font-serif font-bold text-classic-burgundy text-base sm:text-lg">【第1日目】宿の歴史と名物ディナーを堪能</span>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">チェックイン</span>
+              </div>
+              <div class="relative timeline-line space-y-4 text-sm pl-2">
+                ${h.itinerary.day1.map(step => `
+                  <div class="relative pl-7">
+                    <div class="absolute left-0 top-1 w-3.5 h-3.5 bg-white border-2 border-classic-burgundy rounded-full z-10"></div>
+                    <span class="font-bold text-classic-navy font-mono text-xs inline-block bg-gray-100 px-1.5 py-0.5 rounded mr-1">${step.time}</span>
+                    <strong class="text-gray-900 block font-serif text-sm mt-0.5">${step.action}</strong>
+                    <p class="text-xs sm:text-sm text-gray-600 mt-0.5 leading-relaxed">${step.detail}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- 2日目 -->
+            <div class="bg-white p-5 rounded-xl border border-classic-border shadow-sm">
+              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
+                <span class="font-serif font-bold text-classic-navy text-base sm:text-lg">【第2日目】爽快な朝食と周辺の散策・帰路</span>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">お土産選び</span>
+              </div>
+              <div class="relative timeline-line space-y-4 text-sm pl-2">
+                ${h.itinerary.day2.map(step => `
+                  <div class="relative pl-7">
+                    <div class="absolute left-0 top-1 w-3.5 h-3.5 bg-white border-2 border-classic-gold rounded-full z-10"></div>
+                    <span class="font-bold text-classic-navy font-mono text-xs inline-block bg-gray-100 px-1.5 py-0.5 rounded mr-1">${step.time}</span>
+                    <strong class="text-gray-900 block font-serif text-sm mt-0.5">${step.action}</strong>
+                    <p class="text-xs sm:text-sm text-gray-600 mt-0.5 leading-relaxed">${step.detail}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 食の醍醐味（ディナー・朝食・名物） -->
+        <div class="mb-8 bg-[#FAF7F0] p-5 rounded-xl border border-[#D8CBB6]">
+          <h4 class="text-base sm:text-lg font-serif font-bold text-classic-navy mb-3 flex items-center">
+            <span class="w-2.5 h-5 bg-classic-gold rounded-sm mr-2"></span>
+            伝統の舌鼓：美食のハイライト
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-xs font-bold text-classic-burgundy block mb-1">夕食（ディナー）</span>
+              <p class="text-xs sm:text-sm text-gray-800 leading-snug font-serif">${h.gourmet.dinner}</p>
+            </div>
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-xs font-bold text-classic-navy block mb-1">朝食（モーニング）</span>
+              <p class="text-xs sm:text-sm text-gray-800 leading-snug font-serif">${h.gourmet.breakfast}</p>
+            </div>
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-xs font-bold text-classic-goldHover block mb-1">受け継がれる名物逸品</span>
+              <p class="text-xs sm:text-sm text-gray-800 leading-snug font-serif">${h.gourmet.specialty}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- おすすめのお土産3選 -->
+        <div class="mb-8">
+          <h4 class="text-base sm:text-lg font-serif font-bold text-classic-navy mb-3 flex items-center">
+            <span class="w-2.5 h-5 bg-classic-burgundy rounded-sm mr-2"></span>
+            心づくしのお土産・ご当地の逸品（おすすめ3選）
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            ${h.souvenirs.map((s, idx) => `
+              <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center space-x-1.5 text-classic-gold font-bold text-sm mb-1">
+                    <span>第${idx + 1}選</span>
+                    <h5 class="text-gray-900 font-serif font-bold text-sm sm:text-base">${s.name}</h5>
+                  </div>
+                  <p class="text-xs text-gray-600 leading-relaxed font-sans">${s.desc}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 旅の覚え書き（メモ欄）＆ 操作ボタン群 -->
+        <div class="pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+          <div class="w-full sm:w-2/3">
+            <label class="text-xs font-bold text-gray-600 block mb-1">📝 このプランへの個人的なメモ（ご家族との相談用など）</label>
+            <div class="flex gap-2">
+              <input type="text" id="plan-memo-input" value="${plan.memo || ''}" placeholder="例：妻がアップルパイを楽しみにしている。新幹線は10時発を検討。" class="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
+              <button onclick="saveMemo('${plan.id}')" class="px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-xs font-serif whitespace-nowrap">
+                メモ保存
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2 self-end sm:self-auto">
+            <button onclick="copyPlanText('${plan.id}')" class="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-xs sm:text-sm font-medium shadow-sm transition flex items-center space-x-1">
+              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+              <span>旅程をコピー</span>
+            </button>
+            <button onclick="window.print()" class="px-4 py-2.5 bg-classic-navy hover:bg-[#2c435c] text-white rounded-lg text-xs sm:text-sm font-medium shadow transition flex items-center space-x-1">
+              <svg class="w-4 h-4 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              <span>印刷 / 控え</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('plan-container').innerHTML = html;
+    }
+
+    /* ====================================================================
+       6. 試行錯誤の履歴一覧レンダリング
+       ==================================================================== */
+    function renderHistoryCards() {
+      const grid = document.getElementById('history-cards-grid');
+      const emptyMsg = document.getElementById('empty-history-msg');
+      const headerCount = document.getElementById('header-history-count');
+      
+      headerCount.textContent = historyPlans.length;
+
+      if (historyPlans.length === 0) {
+        grid.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+
+      emptyMsg.classList.add('hidden');
+
+      grid.innerHTML = historyPlans.map(plan => {
+        const isSelected = selectedForCompare.has(plan.id);
+        const isCurrent = currentPlan && currentPlan.id === plan.id;
+        const h = plan.hotelData;
+        const seasonJP = { spring: '🌸 春', summer: '☀️ 夏', autumn: '🍁 秋', winter: '❄️ 冬' }[plan.season];
+        const purposeJP = { architecture: '名建築', gourmet: '美食', nature: '静養', anniversary: '記念日' }[plan.purpose];
+
+        return `
+          <div class="bg-white rounded-xl border-2 transition ${isCurrent ? 'border-classic-gold shadow-md' : 'border-gray-200 hover:border-gray-300'} p-4 relative flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs px-2 py-0.5 rounded text-white ${h.bgBadge} font-bold">
+                  ${h.name}
+                </span>
+                <span class="text-xs text-gray-500 font-mono">${plan.createdAt}</span>
+              </div>
+
+              <h4 class="font-serif font-bold text-classic-navy text-base line-clamp-1 mb-1">
+                ${plan.title}
+              </h4>
+              
+              <div class="flex items-center space-x-2 text-xs text-gray-600 mb-2">
+                <span class="bg-[#FAF7F0] px-2 py-0.5 rounded border border-gray-200">${seasonJP}</span>
+                <span class="bg-[#FAF7F0] px-2 py-0.5 rounded border border-gray-200">${purposeJP}</span>
+                <span class="bg-[#FAF7F0] px-2 py-0.5 rounded border border-gray-200">${plan.travelers === 'couple' ? 'ご夫婦' : '一人旅等'}</span>
+              </div>
+
+              ${plan.memo ? `
+                <div class="text-xs bg-yellow-50 text-gray-700 p-2 rounded border border-yellow-200 mb-2">
+                  <strong>メモ:</strong> ${plan.memo}
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="pt-3 border-t border-gray-100 flex items-center justify-between mt-2">
+              <label class="flex items-center space-x-1.5 text-xs text-classic-navy cursor-pointer select-none">
+                <input type="checkbox" onchange="toggleCompareSelect('${plan.id}')" ${isSelected ? 'checked' : ''} class="rounded text-classic-burgundy focus:ring-classic-gold h-4 w-4">
+                <span class="font-bold">比較に含める</span>
+              </label>
+
+              <div class="flex items-center space-x-1">
+                <button onclick="viewPlanDetail('${plan.id}')" class="px-2.5 py-1 text-xs bg-classic-navy text-white rounded hover:bg-gray-800 font-serif">
+                  表示する
+                </button>
+                <button onclick="deletePlan('${plan.id}')" title="削除" class="p-1 text-gray-400 hover:text-red-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ====================================================================
+       7. 履歴操作（表示・削除・メモ・比較選択）
+       ==================================================================== */
+    function viewPlanDetail(planId) {
+      const p = historyPlans.find(item => item.id === planId);
+      if (p) {
+        currentPlan = p;
+        renderCurrentPlan(p);
+        renderHistoryCards();
+        playChime('bell');
+        document.getElementById('plan-detail-section').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function deletePlan(planId) {
+      historyPlans = historyPlans.filter(p => p.id !== planId);
+      selectedForCompare.delete(planId);
+      if (currentPlan && currentPlan.id === planId) {
+        currentPlan = historyPlans.length > 0 ? historyPlans[0] : null;
+        if (currentPlan) {
+          renderCurrentPlan(currentPlan);
+        } else {
+          document.getElementById('plan-container').innerHTML = `
+            <div class="text-center py-16 text-gray-500 font-serif">
+              <p class="text-lg">プランがありません。左の条件から作成してください。</p>
+            </div>
+          `;
+        }
+      }
+      renderHistoryCards();
+      updateCompareUI();
+      showToast("プランを削除しました");
+    }
+
+    function clearHistory() {
+      if (historyPlans.length === 0) return;
+      // alert()の代わりにトーストと直接消去
+      historyPlans = [];
+      selectedForCompare.clear();
+      renderHistoryCards();
+      updateCompareUI();
+      showToast("検討履歴をすべて消去しました");
+    }
+
+    function saveMemo(planId) {
+      const input = document.getElementById('plan-memo-input');
+      const plan = historyPlans.find(p => p.id === planId);
+      if (plan && input) {
+        plan.memo = input.value.trim();
+        renderHistoryCards();
+        playChime('bell');
+        showToast("メモを保存しました");
+      }
+    }
+
+    function toggleCompareSelect(planId) {
+      if (selectedForCompare.has(planId)) {
+        selectedForCompare.delete(planId);
+      } else {
+        if (selectedForCompare.size >= 3) {
+          showToast("比較できるのは最大3件までです", "⚠");
+          renderHistoryCards();
+          return;
+        }
+        selectedForCompare.add(planId);
+      }
+      updateCompareUI();
+      renderHistoryCards();
+    }
+
+    function updateCompareUI() {
+      const count = selectedForCompare.size;
+      document.getElementById('compare-count').textContent = count;
+      const btn = document.getElementById('btn-compare');
+      if (count >= 2) {
+        btn.classList.remove('opacity-60', 'cursor-not-allowed');
+      } else {
+        btn.classList.add('opacity-90');
+      }
+    }
+
+    /* ====================================================================
+       8. プラン比較機能（横並び比較テーブル）
+       ==================================================================== */
+    function compareSelectedPlans() {
+      if (selectedForCompare.size < 2) {
+        // 2件選択されていない場合、最新の2件を自動選択して比較
+        if (historyPlans.length >= 2) {
+          selectedForCompare.clear();
+          selectedForCompare.add(historyPlans[0].id);
+          selectedForCompare.add(historyPlans[1].id);
+          updateCompareUI();
+          renderHistoryCards();
+        } else {
+          showToast("比較するには2つ以上のプランを作成・選択してください", "ℹ️");
+          return;
+        }
+      }
+
+      const plansToCompare = historyPlans.filter(p => selectedForCompare.has(p.id));
+      const contentEl = document.getElementById('compare-modal-content');
+
+      const colWidth = plansToCompare.length === 2 ? 'w-1/2 min-w-[280px]' : 'w-1/3 min-w-[240px]';
+
+      let tableHtml = `
+        <div class="min-w-[650px]">
+          <table class="w-full border-collapse border border-gray-300 text-sm">
+            <thead>
+              <tr class="bg-[#FAF7F0]">
+                <th class="p-3 border border-gray-300 text-left w-36 font-serif text-classic-navy bg-gray-100">比較項目</th>
+                ${plansToCompare.map(p => `
+                  <th class="p-4 border border-gray-300 ${colWidth} text-left">
+                    <span class="text-xs px-2 py-0.5 rounded text-white ${p.hotelData.bgBadge} font-bold mb-1 inline-block">
+                      ${p.hotelData.name}
+                    </span>
+                    <h4 class="font-serif font-bold text-base text-classic-navy leading-snug">${p.title}</h4>
+                    <span class="text-xs text-gray-500 font-sans block mt-1">作成: ${p.createdAt}</span>
+                  </th>
+                `).join('')}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              
+              <!-- 所在地・創業 -->
+              <tr>
+                <td class="p-3 border border-gray-300 font-bold bg-gray-50 text-gray-700">所在地・創業</td>
+                ${plansToCompare.map(p => `
+                  <td class="p-3 border border-gray-300">
+                    <span class="font-bold text-classic-navy">${p.hotelData.location}</span><br>
+                    <span class="text-xs text-gray-600">${p.hotelData.founded}</span>
+                  </td>
+                `).join('')}
+              </tr>
+
+              <!-- 旅の目的と季節 -->
+              <tr>
+                <td class="p-3 border border-gray-300 font-bold bg-gray-50 text-gray-700">目的 / 季節</td>
+                ${plansToCompare.map(p => `
+                  <td class="p-3 border border-gray-300">
+                    <span class="inline-block bg-classic-sand px-2 py-0.5 rounded text-xs font-bold text-classic-burgundy mb-1">
+                      ${{ architecture: '🏛️ 名建築探訪', gourmet: '🍷 伝統美食', nature: '🌿 静養・自然', anniversary: '💐 記念日' }[p.purpose]}
+                    </span>
+                    <span class="text-xs block text-gray-700">季節: ${{ spring: '春', summer: '夏', autumn: '秋', winter: '冬' }[p.season]}</span>
+                  </td>
+                `).join('')}
+              </tr>
+
+              <!-- ホテル建築・空間の特長 -->
+              <tr>
+                <td class="p-3 border border-gray-300 font-bold bg-gray-50 text-gray-700">建築・空間の特長</td>
+                ${plansToCompare.map(p => `
+                  <td class="p-3 border border-gray-300 text-xs text-gray-700 leading-relaxed font-serif">
+                    ${p.hotelData.feature}
+                  </td>
+                `).join('')}
+              </tr>
+
+              <!-- 夕食ディナーの魅力 -->
+              <tr>
+                <td class="p-3 border border-gray-300 font-bold bg-gray-50 text-gray-700">伝統の夕食</td>
+                ${plansToCompare.map(p => `
+                  <td class="p-3 border border-gray-300 text-xs sm:text-sm font-serif">
+                    <strong class="text-classic-burgundy block">${p.hotelData.gourmet.dinner}</strong>
+                    <span class="text-xs text-gray-600 mt-1 block">名物: ${p.hotelData.gourmet.specialty}</span>
+                  </td>
+                `).join('')}
+              </tr>
+
+              <!-- 1日目の主な見どころ -->
+              <tr>
+                <td class="p-3 border border-gray-300 font-bold bg-gray-50 text-gray-700">1日目のハイライト</td>
+                ${plansToCompare.map(p => `
+                  <td class="p-3 border border-gray-300 text-xs">
+                    <ul class="list-disc list-inside space-y-1 text-gray-700">
+                      ${p.hotelData.itinerary.day1.slice(1, 4).map(step => `
+                        <li><strong>${step.action}</strong>（${step.time}）</li>
+                      `).join('')}
+                    </ul>
+                  </td>
+                `).join('')}
+              </tr>
+
+              <!-- 2日目の主な見どころ -->
+              <tr>
+                <td class="p-3 border border-gray-300 font-bold bg-gray-50 text-gray-700">2日目のハイライト</td>
+                ${plansToCompare.map(p => `
+                  <td class="p-3 border border-gray-300 text-xs">
+                    <ul class="list-disc list-inside space-y-1 text-gray-700">
+                      ${p.hotelData.itinerary.day2.slice(0, 3).map(step => `
+                        <li><strong>${step.action}</strong>（${step.time}）</li>
+                      `).join('')}
+                    </ul>
+                  </td>
+                `).join('')}
+              </tr>
+
+              <!-- おすすめのお土産 -->
+              <tr>
+                <td class="p-3 border border-gray-300 font-bold bg-gray-50 text-gray-700">おすすめ土産</td>
+                ${plansToCompare.map(p => `
+                  <td class="p-3 border border-gray-300 text-xs text-gray-800">
+                    ${p.hotelData.souvenirs.map(s => `
+                      <div class="mb-1"><strong>・${s.name}</strong></div>
+                    `).join('')}
+                  </td>
+                `).join('')}
+              </tr>
+
+              <!-- アクションボタン -->
+              <tr class="bg-gray-50">
+                <td class="p-3 border border-gray-300 font-bold text-gray-700">このプランを選ぶ</td>
+                ${plansToCompare.map(p => `
+                  <td class="p-3 border border-gray-300 text-center">
+                    <button onclick="selectAndCloseModal('${p.id}')" class="w-full py-2 bg-classic-navy text-white rounded-lg text-xs font-serif font-bold hover:bg-gray-800 transition">
+                      この旅程を詳しく見る
+                    </button>
+                  </td>
+                `).join('')}
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      contentEl.innerHTML = tableHtml;
+      document.getElementById('compare-modal').classList.remove('hidden');
+      document.getElementById('compare-modal').classList.add('flex');
+      playChime('bell');
+    }
+
+    function closeCompareModal() {
+      document.getElementById('compare-modal').classList.add('hidden');
+      document.getElementById('compare-modal').classList.remove('flex');
+    }
+
+    function selectAndCloseModal(planId) {
+      closeCompareModal();
+      viewPlanDetail(planId);
+    }
+
+    function scrollToHistory() {
+      document.getElementById('history-section').scrollIntoView({ behavior: 'smooth' });
+      playChime('click');
+    }
+
+    /* ====================================================================
+       9. クリップボードへの旅程コピー
+       ==================================================================== */
+    function copyPlanText(planId) {
+      const plan = historyPlans.find(p => p.id === planId) || currentPlan;
+      if (!plan) return;
+
+      const h = plan.hotelData;
+      let text = `【旅程控え】${plan.title}\n`;
+      text += `宿泊先：${h.name}（${h.location}）\n`;
+      text += `創業：${h.founded}\n\n`;
+      
+      text += `■ 第1日目\n`;
+      h.itinerary.day1.forEach(s => {
+        text += `・${s.time} ${s.action} - ${s.detail}\n`;
+      });
+
+      text += `\n■ 第2日目\n`;
+      h.itinerary.day2.forEach(s => {
+        text += `・${s.time} ${s.action} - ${s.detail}\n`;
+      });
+
+      text += `\n■ 伝統のディナー：${h.gourmet.dinner}\n`;
+      text += `■ おすすめ土産：\n`;
+      h.souvenirs.forEach(s => {
+        text += `・${s.name}（${s.desc}）\n`;
+      });
+
+      if (plan.memo) {
+        text += `\n■ 個人メモ：${plan.memo}\n`;
+      }
+
+      // クリップボードへコピー（安全なexecCommandフォールバック対応）
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast("旅程テキストをご家族共有用にコピーしました");
+        playChime('bell');
+      } catch (err) {
+        showToast("コピーに失敗しました", "⚠");
+      }
+      document.body.removeChild(textarea);
+    }
+
+    /* ====================================================================
+       10. 初期ロード時：代表的なクラシックホテルの初期プランを自動生成
+       ==================================================================== */
+    window.onload = function() {
+      // 初期状態として「富士屋ホテル」と「日光金谷ホテル」のプランを準備（比較機能をすぐ試せるように）
+      const defaultHotels = ['fujiya', 'nikko'];
+      
+      defaultHotels.forEach((hKey, idx) => {
+        const hotel = HOTELS_DATA[hKey];
+        const initialPlan = {
+          id: "plan_init_" + idx,
+          createdAt: new Date().toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          hotelKey: hKey,
+          hotelName: hotel.name,
+          location: hotel.location,
+          founded: hotel.founded,
+          tagline: hotel.tagline,
+          purpose: idx === 0 ? 'architecture' : 'nature',
+          season: 'autumn',
+          nights: '1night',
+          travelers: 'couple',
+          age: '60s',
+          gender: 'male',
+          pace: 'relaxed',
+          title: `${hotel.name}で過ごす 錦秋の休日 〜名建築と由緒ある文化財を巡る〜`,
+          hotelData: hotel,
+          memo: idx === 0 ? "妻と相談中。小田原から箱根登山鉄道でのんびり向かう。" : "日光東照宮の紅葉時期に合わせたい。"
+        };
+        historyPlans.push(initialPlan);
+      });
+
+      currentPlan = historyPlans[0];
+      renderCurrentPlan(currentPlan);
+      renderHistoryCards();
+      updateCompareUI();
+    };
+  </script>
+</body>
+</html>
