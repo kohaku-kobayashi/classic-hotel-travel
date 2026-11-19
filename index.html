@@ -1199,7 +1199,8 @@
         // 「いっしょに考える人」をこのプランの「作った人」として写し取る（IDは共通）
         makers: members.map(m => ({ ...m })),
         comments: [],
-        evaluations: {}  // { メンバーID: { want: 0〜5, good: "良いと思った点" } }
+        evaluations: {},  // { メンバーID: { want: 0〜5, good: "良いと思った点" } }
+        photos: []
       };
     }
 
@@ -1476,6 +1477,112 @@
         </div>`;
     }
 
+    // 思い出の写真（端末内で縮小して保存。どこにもアップロードしない）
+    const MAX_PHOTOS = 6;
+    function renderPhotos(plan) {
+      const items = plan.photos.map(ph => {
+        const w = whoInfo(plan, ph.by);
+        return `
+          <figure class="bg-white border border-gray-200 rounded-xl p-2 shadow-sm avoid-break" data-photo-id="${esc(ph.id)}">
+            <img src="${esc(ph.dataUrl)}" alt="${esc(ph.caption || '思い出の写真')}" class="w-full h-44 object-cover rounded-lg bg-gray-100">
+            <figcaption class="mt-1.5 space-y-1">
+              <span class="inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${GEN[w.gen].badge}">${esc(w.name)}</span>
+              <p class="print-only text-sm text-gray-800">${esc(ph.caption)}</p>
+              <input type="text" data-photo-caption value="${esc(ph.caption)}" maxlength="200" aria-label="写真のひとこと" placeholder="いつ・どこで・だれと？"
+                class="no-print w-full p-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
+              <button type="button" data-action="photo-delete" class="no-print text-xs text-gray-500 hover:text-red-700 underline">この写真を外す</button>
+            </figcaption>
+          </figure>`;
+      }).join('');
+      return `
+        <div class="mb-8">
+          ${sectionTitle('思い出の写真', 'bg-classic-gold')}
+          <p class="text-sm text-gray-600 mb-3 no-print">昔の旅行の写真や、気になる場所の写真を添えられます（${MAX_PHOTOS}枚まで）。写真はこの端末の中だけに保存され、インターネットには送られません。</p>
+          ${items ? `<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">${items}</div>` : '<p class="text-sm text-gray-500 mb-3">まだ写真はありません。</p>'}
+          ${plan.photos.length < MAX_PHOTOS ? `
+          <div class="no-print flex flex-wrap items-center gap-2 bg-[#FAF7F0] border border-classic-border rounded-xl p-3">
+            <label for="photo-by" class="text-sm font-bold text-gray-700">だれの写真</label>
+            <select id="photo-by" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">${whoOptions(plan, plan.makers[0] ? `m:${plan.makers[0].id}` : 'elder', { includeTool: false })}</select>
+            <label class="px-4 py-2 bg-classic-burgundy hover:bg-[#722736] text-white rounded-lg text-sm font-bold cursor-pointer focus-within:ring-2 focus-within:ring-classic-gold">
+              📷 写真を選ぶ
+              <input type="file" id="photo-file" accept="image/*" multiple class="sr-only">
+            </label>
+          </div>` : ''}
+        </div>`;
+    }
+
+    // 画像を長い辺 1024px 以内の JPEG に縮小して data URL にする（保存容量を抑えるため）
+    function shrinkImage(file, maxSide = 1024, quality = 0.8) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('read'));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('decode'));
+          img.onload = () => {
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = String(reader.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function addPhotos(files) {
+      const plan = currentPlan;
+      if (!plan || !files || !files.length) return;
+      const by = (document.getElementById('photo-by') || {}).value || 'both';
+      const room = MAX_PHOTOS - plan.photos.length;
+      const list = [...files].filter(f => f.type.startsWith('image/')).slice(0, room);
+      if (files.length > room) showToast(`写真は${MAX_PHOTOS}枚までです`, 'ℹ️');
+      let added = 0;
+      for (const f of list) {
+        try {
+          const dataUrl = await shrinkImage(f);
+          const photo = { id: newId('ph'), dataUrl, caption: '', by, at: new Date().toISOString() };
+          plan.photos.push(photo);
+          touch(plan);
+          if (!saveState()) {
+            plan.photos.pop(); // 容量オーバーなら取り消す
+            saveState();
+            showToast('端末の保存容量がいっぱいで、写真を加えられませんでした', '⚠');
+            break;
+          }
+          added++;
+        } catch (e) {
+          showToast('この写真は読み込めませんでした', '⚠');
+        }
+      }
+      renderAll();
+      if (added) showToast(`写真を${added}枚加えました`);
+    }
+
+    function deletePhoto(photoId) {
+      const plan = currentPlan;
+      if (!plan || !confirm('この写真を外しますか？')) return;
+      plan.photos = plan.photos.filter(p => p.id !== photoId);
+      commit(plan);
+    }
+
+    let captionTimer = null;
+    function updatePhotoCaption(el) {
+      const fig = el.closest('[data-photo-id]');
+      const ph = currentPlan && currentPlan.photos.find(p => p.id === fig.dataset.photoId);
+      if (!ph) return;
+      ph.caption = str(el.value, 200);
+      touch(currentPlan);
+      clearTimeout(captionTimer);
+      captionTimer = setTimeout(saveState, 400);
+    }
+
     function voiceCounts(plan) {
       const c = { elder: 0, young: 0, other: 0, both: 0, tool: 0 };
       plan.days.forEach(d => d.steps.forEach(s => {
@@ -1549,6 +1656,8 @@
         </div>
 
         ${renderComments(plan)}
+
+        ${renderPhotos(plan)}
 
         <!-- ホテルの由緒と見どころ -->
         <div class="mb-8 avoid-break">
@@ -2244,7 +2353,10 @@
           text: str(c && c.text, 1000),
           at: isoOr(c && c.at, now)
         })).filter(c => c.text) : [],
-        evaluations: normalizeEvaluations(raw.evaluations)
+        evaluations: normalizeEvaluations(raw.evaluations),
+        photos: Array.isArray(raw.photos) ? raw.photos.slice(0, MAX_PHOTOS).filter(ph => ph && typeof ph.dataUrl === 'string' && ph.dataUrl.length < 4000000 && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(ph.dataUrl)).map(ph => ({
+          id: safeId(ph.id, 'ph'), dataUrl: ph.dataUrl, caption: str(ph.caption, 200), by: str(ph.by, 90) || 'both', at: isoOr(ph.at, now)
+        })) : []
       };
       // 旧版のメモ欄は「ふたりのひとこと」の1件目として引き継ぐ
       const oldMemo = str(raw.memo, 1000).trim();
@@ -2450,6 +2562,8 @@
         case 'comment-delete': deleteComment(el.closest('[data-comment-id]').dataset.commentId); break;
         // 見比べ表での評価
         case 'rate': rate(planId, memberEl.dataset.memberId, Number(el.dataset.value)); break;
+        // 写真
+        case 'photo-delete': deletePhoto(el.closest('[data-photo-id]').dataset.photoId); break;
       }
     });
 
@@ -2461,12 +2575,14 @@
     document.addEventListener('input', e => {
       if (e.target.dataset && e.target.dataset.memberField) updateMemberField(e.target);
       if (e.target.hasAttribute && e.target.hasAttribute('data-eval-good')) updateEvalGood(e.target);
+      if (e.target.hasAttribute && e.target.hasAttribute('data-photo-caption')) updatePhotoCaption(e.target);
     });
 
     document.addEventListener('change', e => {
       const el = e.target;
       if (el.dataset && el.dataset.memberField) updateMemberField(el);
       if (el.dataset && el.dataset.action === 'toggle-compare') toggleCompareSelect(planIdFrom(el));
+      if (el.id === 'photo-file') addPhotos(el.files);
       if (el.id === 'import-file') {
         importJSON(el.files && el.files[0]);
         el.value = ''; // 同じファイルをもう一度選べるようにする
