@@ -46,12 +46,17 @@
   <style>
     /* 印刷時のレイアウト調整 */
     @media print {
-      body { background-color: #ffffff !important; color: #000000 !important; font-size: 14pt !important; }
+      html, html.fs-large, html.fs-xlarge { font-size: 11pt !important; }
+      body { background-color: #ffffff !important; color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      header { position: static !important; box-shadow: none !important; }
       .no-print { display: none !important; }
       .print-only { display: block !important; }
-      .shadow-md, .shadow-xl { box-shadow: none !important; }
-      .bg-white { background: #ffffff !important; border: 1px solid #ccc !important; }
+      .shadow-md, .shadow-xl, .shadow-sm, .shadow { box-shadow: none !important; }
+      #plan-detail-section { grid-column: 1 / -1 !important; }
+      #plan-container { border: none !important; padding: 0 !important; }
+      .avoid-break { break-inside: avoid; }
     }
+    .print-only { display: none; }
     
     /* スムーズなスクロールと基本スタイル */
     html {
@@ -145,7 +150,7 @@
   <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full">
     
     <!-- イントロダクション案内帯 -->
-    <div class="bg-white rounded-xl p-5 mb-8 border border-classic-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div class="no-print bg-white rounded-xl p-5 mb-8 border border-classic-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div class="space-y-1">
         <div class="flex items-center space-x-2">
           <span class="inline-block px-2.5 py-0.5 text-xs font-bold bg-classic-burgundy text-white rounded">クラシックホテル10館</span>
@@ -171,7 +176,19 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       
       <!-- 左側：条件選択フォーム（幅5カラム） -->
-      <section id="planner-form" class="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
+      <div class="lg:col-span-5 space-y-6 no-print">
+
+      <!-- いっしょに考える人（参加メンバー） -->
+      <section id="members-panel" class="bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
+        <div class="border-b border-classic-border pb-3 mb-4 flex items-center space-x-2">
+          <span class="w-3 h-6 bg-classic-gold rounded-sm"></span>
+          <h3 class="text-lg sm:text-xl font-serif font-bold text-classic-navy">いっしょに考える人</h3>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">呼び名を入れておくと、だれの提案や思い出かがプランに残ります。新しく作るプランの「作った人」になります。</p>
+        <div id="members-editor"><!-- JSで描画 --></div>
+      </section>
+
+      <section id="planner-form" class="bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
         <div class="border-b border-classic-border pb-3 mb-5 flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <span class="w-3 h-6 bg-classic-burgundy rounded-sm"></span>
@@ -341,6 +358,7 @@
 
         </form>
       </section>
+      </div>
 
       <!-- 右側：生成されたプランの詳細（幅7カラム） -->
       <section id="plan-detail-section" class="lg:col-span-7 space-y-6">
@@ -355,7 +373,7 @@
     </div>
 
     <!-- 履歴＆比較セクション（重要要件） -->
-    <section id="history-section" class="mt-12 pt-8 border-t-2 border-[#D8CBB6]">
+    <section id="history-section" class="no-print mt-12 pt-8 border-t-2 border-[#D8CBB6]">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4">
         <div>
           <div class="flex items-center space-x-2">
@@ -1178,7 +1196,9 @@
         title,
         days: built.days,
         skipped: built.skipped,
-        memo: ''
+        // 「いっしょに考える人」をこのプランの「作った人」として写し取る（IDは共通）
+        makers: members.map(m => ({ ...m })),
+        comments: []
       };
     }
 
@@ -1208,7 +1228,87 @@
     }
 
     /* ====================================================================
-       5. プラン詳細の描画
+       5. 参加メンバーと「提案した人」
+       ==================================================================== */
+    let members = [];            // いっしょに考える人（新しいプランの「作った人」になる）
+    let editingStepId = null;    // 編集中の行程ID（新規追加は "new:日番号"）
+    let editingTitle = false;
+    let editingMakers = false;
+
+    const GEN = {
+      elder: { label: '年長の方', badge: 'bg-[#F6E7EA] text-[#5B1E2B] border-[#E3BCC4]', bubble: 'bg-[#FBF1F3] border-[#C98D99]' },
+      young: { label: '若い方',   badge: 'bg-[#E6EEF6] text-[#1B3B6F] border-[#B5C8DE]', bubble: 'bg-[#F0F5FA] border-[#7F9CC0]' },
+      other: { label: 'そのほか', badge: 'bg-[#EEF3EC] text-[#2C5E43] border-[#BCD3C3]', bubble: 'bg-[#F3F7F1] border-[#8FB39A]' },
+      both:  { label: 'みんなで', badge: 'bg-[#FAF1DD] text-[#7A5A12] border-[#E5CE94]', bubble: 'bg-[#FDF8EC] border-[#D9B862]' },
+      tool:  { label: 'たたき台', badge: 'bg-gray-100 text-gray-600 border-gray-300', bubble: 'bg-gray-50 border-gray-300' }
+    };
+
+    function makeMember(gen = 'elder', name = '') {
+      return { id: newId('m'), name, gen };
+    }
+    function defaultMembers() {
+      return [makeMember('elder'), makeMember('young')];
+    }
+    function memberName(m) {
+      return (m && m.name) ? m.name : (m ? GEN[m.gen].label : '');
+    }
+    function memberLabel(m) {
+      return m.name ? `${m.name}（${GEN[m.gen].label}）` : GEN[m.gen].label;
+    }
+
+    // by の値（'tool' | 'both' | 'elder' | 'young' | 'm:<id>'）から表示名と世代を求める
+    function whoInfo(plan, by) {
+      if (typeof by === 'string' && by.startsWith('m:')) {
+        const m = (plan.makers || []).find(x => x.id === by.slice(2));
+        if (m) return { name: memberName(m), gen: m.gen, full: memberLabel(m) };
+        return { name: '（以前のメンバー）', gen: 'other', full: '（以前のメンバー）' };
+      }
+      const key = GEN[by] ? by : 'tool';
+      return { name: GEN[key].label, gen: key, full: GEN[key].label };
+    }
+    function whoBadge(plan, by) {
+      const w = whoInfo(plan, by);
+      return `<span class="inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${GEN[w.gen].badge}">${w.gen === 'tool' ? '🧭 ' : '🙋 '}${esc(w.name)}</span>`;
+    }
+    function whoOptions(plan, selected, { includeTool = true } = {}) {
+      const opts = [];
+      (plan.makers || []).forEach(m => opts.push([`m:${m.id}`, memberLabel(m)]));
+      if (!(plan.makers || []).some(m => m.gen === 'elder')) opts.push(['elder', '年長の方']);
+      if (!(plan.makers || []).some(m => m.gen === 'young')) opts.push(['young', '若い方']);
+      opts.push(['both', 'みんなで']);
+      if (includeTool) opts.push(['tool', 'たたき台（ツールの提案）']);
+      return opts.map(([v, l]) => `<option value="${esc(v)}" ${v === selected ? 'selected' : ''}>${esc(l)}</option>`).join('');
+    }
+
+    // メンバー編集欄（scope: 'global' = いっしょに考える人 / 'plan' = このプランを作った人）
+    function renderMemberEditor(list, scope) {
+      const rows = list.map(m => `
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2" data-member-id="${esc(m.id)}" data-scope="${scope}">
+          <input type="text" data-member-field="name" value="${esc(m.name)}" maxlength="30" aria-label="呼び名"
+            placeholder="${m.gen === 'young' ? '例：けんたさん' : m.gen === 'elder' ? '例：はなこさん' : '呼び名'}"
+            class="flex-1 min-w-[8rem] p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
+          <select data-member-field="gen" aria-label="世代" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">
+            ${['elder', 'young', 'other'].map(g => `<option value="${g}" ${m.gen === g ? 'selected' : ''}>${GEN[g].label}</option>`).join('')}
+          </select>
+          <button type="button" data-action="member-remove" aria-label="この人を外す" title="この人を外す" class="px-2 py-1.5 text-gray-400 hover:text-red-700 text-lg leading-none">×</button>
+        </div>`).join('');
+      return `
+        <div class="space-y-2">
+          ${rows || '<p class="text-sm text-gray-500">まだだれもいません。</p>'}
+          <button type="button" data-action="member-add" data-scope="${scope}" class="mt-1 px-3 py-1.5 text-sm border border-dashed border-classic-gold text-classic-goldHover rounded-lg hover:bg-[#FAF4E8]">＋ 人を加える</button>
+        </div>`;
+    }
+
+    function renderMembersPanel() {
+      document.getElementById('members-editor').innerHTML = renderMemberEditor(members, 'global');
+    }
+
+    function memberList(scope) {
+      return scope === 'plan' ? (currentPlan ? currentPlan.makers : null) : members;
+    }
+
+    /* ====================================================================
+       6. プラン詳細の描画（たたき台を、ふたりで直していく画面）
        ==================================================================== */
     function sectionTitle(text, color = 'bg-classic-gold') {
       return `
@@ -1217,25 +1317,78 @@
         </h4>`;
     }
 
-    function renderStep(step, dayIndex) {
+    const smallBtn = 'px-2.5 py-1 text-xs border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 hover:border-classic-gold';
+
+    function stepControls(step, dayIndex, idx, dayLen, lastDay) {
+      const canUp = idx > 0 || dayIndex > 0;
+      const canDown = idx < dayLen - 1 || !lastDay;
+      return `
+        <div class="no-print mt-1.5 flex flex-wrap gap-1.5">
+          <button type="button" data-action="step-edit" class="${smallBtn}">✏️ なおす・ひとこと</button>
+          <button type="button" data-action="step-up" class="${smallBtn}" ${canUp ? '' : 'disabled style="opacity:.4"'} aria-label="ひとつ上へ" title="ひとつ上へ">↑</button>
+          <button type="button" data-action="step-down" class="${smallBtn}" ${canDown ? '' : 'disabled style="opacity:.4"'} aria-label="ひとつ下へ" title="ひとつ下へ">↓</button>
+          <button type="button" data-action="step-delete" class="${smallBtn} hover:text-red-700" aria-label="この予定を消す" title="この予定を消す">消す</button>
+        </div>`;
+    }
+
+    function renderStepForm(plan, step, dayIndex, isNew) {
+      const s = step || { time: '', action: '', detail: '', by: 'both', note: '' };
+      const field = 'w-full p-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-classic-gold';
+      return `
+        <div class="relative pl-7 no-print">
+          <div class="absolute left-0 top-3 w-3.5 h-3.5 bg-classic-gold rounded-full z-10"></div>
+          <div data-step-form data-step-id="${esc(isNew ? '' : s.id)}" data-day-index="${dayIndex}" class="bg-[#FAF7F0] border-2 border-classic-gold rounded-xl p-3 space-y-2">
+            <p class="text-sm font-bold text-classic-navy">${isNew ? '予定を加える' : '予定をなおす'}</p>
+            <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-2">
+              <label class="text-xs text-gray-600">時刻<input type="time" name="time" value="${esc(s.time)}" class="${field}"></label>
+              <label class="text-xs text-gray-600">予定<input type="text" name="action" value="${esc(s.action)}" maxlength="200" placeholder="例：駅前の喫茶店でひと休み" class="${field}"></label>
+            </div>
+            <label class="block text-xs text-gray-600">くわしく<textarea name="detail" rows="2" maxlength="1000" class="${field}">${esc(s.detail)}</textarea></label>
+            <label class="block text-xs text-gray-600">提案した人<select name="by" class="${field}">${whoOptions(plan, s.by)}</select></label>
+            <label class="block text-xs text-gray-600">ひとこと（思い出・おすすめの理由・調べたこと）
+              <textarea name="note" rows="2" maxlength="1000" placeholder="例：50年前に新婚旅行で泊まった。ロビーの階段で写真を撮った／調べたら今も同じ場所で営業している" class="${field}">${esc(s.note)}</textarea>
+            </label>
+            <div class="flex gap-2 pt-1">
+              <button type="button" data-action="step-save" class="px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold hover:bg-[#722736]">保存</button>
+              <button type="button" data-action="step-cancel" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50">やめる</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderStep(plan, step, dayIndex, idx, dayLen, lastDay) {
+      if (editingStepId === step.id) return renderStepForm(plan, step, dayIndex, false);
       const dot = dayIndex === 0 ? 'border-classic-burgundy' : 'border-classic-gold';
+      const noteWho = whoInfo(plan, step.by);
+      const note = step.note ? `
+          <div class="mt-1.5 text-sm border-l-4 rounded-r-lg px-3 py-1.5 ${GEN[noteWho.gen].bubble}">
+            💬 <span class="font-bold">${esc(noteWho.name)}のひとこと</span>：${esc(step.note)}
+          </div>` : '';
       if (step.kind === 'rest') {
         return `
-        <div class="relative pl-7">
+        <div class="relative pl-7 avoid-break" data-step-id="${esc(step.id)}" data-day-index="${dayIndex}">
           <div class="absolute left-0.5 top-1.5 w-2.5 h-2.5 bg-[#E2D8C8] rounded-full z-10"></div>
           <p class="text-sm text-gray-600"><span class="font-mono text-xs mr-1">${esc(step.time)}</span>☕ <strong class="text-gray-700">${esc(step.action)}</strong>　${esc(step.detail)}</p>
+          ${note}
+          ${stepControls(step, dayIndex, idx, dayLen, lastDay)}
         </div>`;
       }
       return `
-        <div class="relative pl-7">
+        <div class="relative pl-7 avoid-break" data-step-id="${esc(step.id)}" data-day-index="${dayIndex}">
           <div class="absolute left-0 top-1.5 w-3.5 h-3.5 bg-white border-2 ${dot} rounded-full z-10"></div>
-          <span class="font-bold text-classic-navy font-mono text-xs inline-block bg-gray-100 px-1.5 py-0.5 rounded mr-1">${esc(step.time)}</span>
-          <strong class="text-gray-900 block font-serif text-base mt-0.5">${esc(step.action)}</strong>
+          <div class="flex flex-wrap items-center gap-1.5">
+            ${step.time ? `<span class="font-bold text-classic-navy font-mono text-xs inline-block bg-gray-100 px-1.5 py-0.5 rounded">${esc(step.time)}</span>` : ''}
+            ${whoBadge(plan, step.by)}
+          </div>
+          <strong class="text-gray-900 block font-serif text-base mt-0.5">${esc(step.action) || '（予定名なし）'}</strong>
           ${step.detail ? `<p class="text-sm text-gray-600 mt-0.5 leading-relaxed">${esc(step.detail)}</p>` : ''}
+          ${note}
+          ${stepControls(step, dayIndex, idx, dayLen, lastDay)}
         </div>`;
     }
 
     function renderDays(plan) {
+      const lastIdx = plan.days.length - 1;
       return plan.days.map((day, di) => `
         <div class="bg-white p-5 rounded-xl border border-classic-border shadow-sm">
           <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 pb-2 mb-4">
@@ -1243,7 +1396,11 @@
             <span class="text-sm text-gray-600">${esc(day.theme)}</span>
           </div>
           <div class="relative timeline-line space-y-4 pl-2">
-            ${day.steps.length ? day.steps.map(s => renderStep(s, di)).join('') : '<p class="text-sm text-gray-500 pl-7">まだ予定がありません。</p>'}
+            ${day.steps.length ? day.steps.map((s, i) => renderStep(plan, s, di, i, day.steps.length, di === lastIdx)).join('') : '<p class="text-sm text-gray-500 pl-7">まだ予定がありません。</p>'}
+            ${editingStepId === `new:${di}` ? renderStepForm(plan, null, di, true) : `
+              <div class="pl-7 no-print">
+                <button type="button" data-action="step-add" data-day-index="${di}" class="px-3 py-1.5 text-sm border border-dashed border-classic-burgundy text-classic-burgundy rounded-lg hover:bg-[#FBF1F3]">＋ この日に予定を加える</button>
+              </div>`}
           </div>
         </div>
       `).join('');
@@ -1252,16 +1409,79 @@
     function renderSkipped(plan) {
       if (!plan.skipped || plan.skipped.length === 0) return '';
       return `
-        <details class="mt-4 bg-white border border-dashed border-[#D8CBB6] rounded-xl p-4">
-          <summary class="cursor-pointer text-sm font-bold text-classic-navy">ペースに合わせて外した候補（${plan.skipped.length}件）</summary>
-          <ul class="mt-2 space-y-1 text-sm text-gray-700">
+        <details class="no-print mt-4 bg-white border border-dashed border-[#D8CBB6] rounded-xl p-4">
+          <summary class="cursor-pointer text-sm font-bold text-classic-navy">ペースに合わせて外した候補（${plan.skipped.length}件）— 行きたければ戻せます</summary>
+          <ul class="mt-2 space-y-2 text-sm text-gray-700">
             ${plan.skipped.map(s => `
-              <li class="flex flex-wrap items-baseline gap-2">
+              <li class="flex flex-wrap items-center gap-2" data-skip-id="${esc(s.id)}">
                 <span class="text-xs bg-gray-100 rounded px-1.5">${esc(plan.days[s.dayIndex] ? plan.days[s.dayIndex].label : '')}</span>
+                <span class="font-mono text-xs">${esc(s.time)}</span>
                 <span>${esc(s.action)}</span>
+                <button type="button" data-action="skip-restore" class="${smallBtn}">旅程に戻す</button>
               </li>`).join('')}
           </ul>
         </details>`;
+    }
+
+    // このプランを作った人
+    function renderMakers(plan) {
+      if (editingMakers) {
+        return `
+          <div class="bg-[#FAF7F0] border-2 border-classic-gold rounded-xl p-4 mb-6 no-print">
+            <p class="text-sm font-bold text-classic-navy mb-2">このプランを作った人</p>
+            ${renderMemberEditor(plan.makers, 'plan')}
+            <button type="button" data-action="makers-done" class="mt-3 px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold">できた</button>
+          </div>`;
+      }
+      const chips = plan.makers.length
+        ? plan.makers.map(m => `<span class="inline-block text-sm font-bold px-2.5 py-0.5 rounded-full border ${GEN[m.gen].badge}">${esc(memberLabel(m))}</span>`).join(' ')
+        : '<span class="text-sm text-gray-500">まだ登録されていません</span>';
+      return `
+        <div class="flex flex-wrap items-center gap-2 mb-6">
+          <span class="text-sm text-gray-600 font-bold">作った人：</span>${chips}
+          <button type="button" data-action="makers-edit" class="${smallBtn} no-print">変更</button>
+        </div>`;
+    }
+
+    // ふたりのひとこと（プラン全体への書き込み）
+    function renderComments(plan) {
+      const list = plan.comments.map(c => {
+        const w = whoInfo(plan, c.by);
+        return `
+          <li class="border-l-4 rounded-r-lg px-3 py-2 ${GEN[w.gen].bubble} avoid-break" data-comment-id="${esc(c.id)}">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-sm font-bold text-gray-800">${esc(w.full)}</span>
+              <span class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">${esc(formatDate(c.at))}</span>
+                <button type="button" data-action="comment-delete" class="no-print text-gray-400 hover:text-red-700 text-lg leading-none" aria-label="この書き込みを消す" title="この書き込みを消す">×</button>
+              </span>
+            </div>
+            <p class="text-sm text-gray-800 whitespace-pre-wrap mt-0.5">${esc(c.text)}</p>
+          </li>`;
+      }).join('');
+      return `
+        <div class="mb-8">
+          ${sectionTitle('ふたりのひとこと', 'bg-classic-burgundy')}
+          <p class="text-sm text-gray-600 mb-3 no-print">このプランについて、思い出したこと・楽しみなこと・気になることを、それぞれ書きこみましょう。</p>
+          ${list ? `<ul class="space-y-2 mb-4">${list}</ul>` : '<p class="text-sm text-gray-500 mb-4">まだ書き込みはありません。</p>'}
+          <div class="no-print bg-[#FAF7F0] border border-classic-border rounded-xl p-3 space-y-2" data-comment-form>
+            <div class="flex flex-wrap items-center gap-2">
+              <label for="comment-by" class="text-sm font-bold text-gray-700">書く人</label>
+              <select id="comment-by" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">${whoOptions(plan, plan.makers[0] ? `m:${plan.makers[0].id}` : 'elder', { includeTool: false })}</select>
+            </div>
+            <textarea id="comment-text" rows="2" maxlength="1000" aria-label="ひとこと" placeholder="例：このホテルのカレーは、昔父がよく話していた味です" class="w-full p-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-classic-gold"></textarea>
+            <button type="button" data-action="comment-add" class="px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold hover:bg-[#722736]">書きこむ</button>
+          </div>
+        </div>`;
+    }
+
+    function voiceCounts(plan) {
+      const c = { elder: 0, young: 0, other: 0, both: 0, tool: 0 };
+      plan.days.forEach(d => d.steps.forEach(s => {
+        if (s.kind === 'rest') return;
+        c[whoInfo(plan, s.by).gen]++;
+      }));
+      return c;
     }
 
     function renderCurrentPlan(plan) {
@@ -1277,9 +1497,21 @@
       const paceNote = plan.pace === 'relaxed'
         ? 'ゆったりペース：遠出は1日1か所にしぼり、休憩をはさんでいます。'
         : 'しっかり巡るペース：近くの名所も多めに入れています。';
+      const vc = voiceCounts(plan);
+      const titleBlock = editingTitle ? `
+          <div class="no-print flex flex-col sm:flex-row gap-2 mt-1" data-title-form>
+            <input type="text" id="title-input" value="${esc(plan.title)}" maxlength="200" aria-label="プランの名前" class="flex-1 p-2 text-lg font-serif border-2 border-classic-gold rounded-lg">
+            <div class="flex gap-2">
+              <button type="button" data-action="title-save" class="px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold">保存</button>
+              <button type="button" data-action="title-cancel" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm">やめる</button>
+            </div>
+          </div>` : `
+          <h2 class="text-2xl sm:text-3xl font-serif font-bold text-classic-navy leading-tight">${esc(plan.title)}
+            <button type="button" data-action="title-edit" class="${smallBtn} no-print align-middle ml-1">名前を変える</button>
+          </h2>`;
 
       container.innerHTML = `
-        <div class="border-b-2 border-classic-gold pb-4 mb-6">
+        <div class="border-b-2 border-classic-gold pb-4 mb-4">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white ${esc(h.bgBadge)}">${esc(h.founded)}</span>
             <div class="flex items-center space-x-2 text-sm text-gray-500 font-serif">
@@ -1288,10 +1520,12 @@
               <span class="text-classic-burgundy font-bold">${esc(LABELS.purpose[plan.purpose])}</span>
             </div>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-serif font-bold text-classic-navy leading-tight">${esc(plan.title)}</h2>
+          ${titleBlock}
           <p class="text-base sm:text-lg font-serif text-classic-goldHover mt-1 italic">「${esc(h.tagline)}」</p>
           <p class="text-sm text-gray-600 mt-1">📍 所在地：${esc(h.location)}</p>
         </div>
+
+        ${renderMakers(plan)}
 
         <!-- 旅の条件 -->
         <div class="bg-[#FAF7F0] p-4 rounded-xl border border-classic-border mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
@@ -1301,8 +1535,22 @@
           <div><span class="text-xs text-gray-500 block">歩くペース</span><span class="text-sm font-bold text-classic-navy">${esc(LABELS.pace[plan.pace])}</span></div>
         </div>
 
-        <!-- ホテルの由緒と見どころ -->
+        <!-- 旅程 -->
         <div class="mb-8">
+          ${sectionTitle('旅程（たたき台を、ふたりで直していきましょう）', 'bg-classic-burgundy')}
+          <p class="text-sm text-gray-600 mb-1">${esc(paceNote)}</p>
+          <p class="text-sm text-gray-600 mb-3">
+            提案した人：${['elder', 'young', 'other', 'both', 'tool'].filter(g => vc[g]).map(g => `${esc(GEN[g].label)} ${vc[g]}件`).join('・') || 'なし'}
+          </p>
+          <div class="space-y-5">${renderDays(plan)}</div>
+          ${renderSkipped(plan)}
+          <p class="text-sm text-gray-700 mt-4 bg-[#F4EFE6] rounded-lg p-3">🧳 <strong>季節のひとこと</strong>：${esc(SEASON_TIPS[plan.season])}</p>
+        </div>
+
+        ${renderComments(plan)}
+
+        <!-- ホテルの由緒と見どころ -->
+        <div class="mb-8 avoid-break">
           ${sectionTitle('このホテルの歴史と見どころ')}
           <p class="text-sm sm:text-base text-gray-700 leading-relaxed font-serif bg-[#FCFAF6] p-4 rounded-xl border-l-4 border-classic-gold">${esc(h.feature)}</p>
           <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
@@ -1314,17 +1562,8 @@
           </div>
         </div>
 
-        <!-- 旅程 -->
-        <div class="mb-8">
-          ${sectionTitle('旅程', 'bg-classic-burgundy')}
-          <p class="text-sm text-gray-600 mb-3">${esc(paceNote)}</p>
-          <div class="space-y-5">${renderDays(plan)}</div>
-          ${renderSkipped(plan)}
-          <p class="text-sm text-gray-700 mt-4 bg-[#F4EFE6] rounded-lg p-3">🧳 <strong>季節のひとこと</strong>：${esc(SEASON_TIPS[plan.season])}</p>
-        </div>
-
         <!-- 食事 -->
-        <div class="mb-8 bg-[#FAF7F0] p-5 rounded-xl border border-[#D8CBB6]">
+        <div class="mb-8 bg-[#FAF7F0] p-5 rounded-xl border border-[#D8CBB6] avoid-break">
           ${sectionTitle('食事の楽しみ')}
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div class="bg-white p-3.5 rounded-lg border border-gray-200">
@@ -1343,7 +1582,7 @@
         </div>
 
         <!-- お土産 -->
-        <div class="mb-8">
+        <div class="mb-8 avoid-break">
           ${sectionTitle('おすすめのお土産', 'bg-classic-burgundy')}
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             ${h.souvenirs.map(s => `
@@ -1354,25 +1593,16 @@
           </div>
         </div>
 
-        <!-- メモ ＆ 操作ボタン -->
-        <div class="pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
-          <div class="w-full sm:w-2/3">
-            <label for="plan-memo-input" class="text-sm font-bold text-gray-700 block mb-1">📝 メモ</label>
-            <div class="flex gap-2">
-              <input type="text" id="plan-memo-input" value="${esc(plan.memo)}" placeholder="例：新幹線は10時ごろの便がよさそう" class="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
-              <button data-action="save-memo" class="px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-sm font-serif whitespace-nowrap">保存</button>
-            </div>
-          </div>
-          <div class="flex items-center space-x-2 self-end sm:self-auto">
-            <button data-action="copy-plan" class="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium shadow-sm transition">旅程をコピー</button>
-            <button data-action="print" class="px-4 py-2.5 bg-classic-navy hover:bg-[#2c435c] text-white rounded-lg text-sm font-medium shadow transition">印刷する</button>
-          </div>
+        <!-- 操作ボタン -->
+        <div class="pt-4 border-t border-gray-200 flex flex-wrap items-center justify-end gap-2 no-print">
+          <button type="button" data-action="copy-plan" class="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium shadow-sm transition">旅程を文字でコピー</button>
+          <button type="button" data-action="print" class="px-4 py-2.5 bg-classic-navy hover:bg-[#2c435c] text-white rounded-lg text-sm font-medium shadow transition">印刷する</button>
         </div>
       `;
     }
 
     /* ====================================================================
-       6. 作ったプランの一覧
+       7. 作ったプランの一覧
        ==================================================================== */
     function renderHistoryCards() {
       const grid = document.getElementById('history-cards-grid');
@@ -1391,6 +1621,9 @@
         const isCurrent = currentPlan && currentPlan.id === plan.id;
         const h = getHotel(plan);
         const chip = text => `<span class="bg-[#FAF7F0] px-2 py-0.5 rounded border border-gray-200">${esc(text)}</span>`;
+        const vc = voiceCounts(plan);
+        const notes = plan.days.reduce((n, d) => n + d.steps.filter(s => s.note).length, 0);
+        const last = plan.comments[plan.comments.length - 1];
         return `
           <div class="bg-white rounded-xl border-2 transition ${isCurrent ? 'border-classic-gold shadow-md' : 'border-gray-200 hover:border-gray-300'} p-4 relative flex flex-col justify-between" data-plan-id="${esc(plan.id)}">
             <div>
@@ -1402,7 +1635,9 @@
               <div class="flex flex-wrap gap-1.5 text-xs text-gray-700 mb-2">
                 ${chip(LABELS.season[plan.season])}${chip(LABELS.nights[plan.nights])}${chip(LABELS.companion[plan.companion])}${chip(LABELS.pace[plan.pace])}
               </div>
-              ${plan.memo ? `<div class="text-sm bg-yellow-50 text-gray-700 p-2 rounded border border-yellow-200 mb-2"><strong>メモ：</strong>${esc(plan.memo)}</div>` : ''}
+              ${plan.makers.length ? `<p class="text-sm text-gray-700 mb-1">作った人：${plan.makers.map(m => esc(memberName(m))).join('・')}</p>` : ''}
+              <p class="text-xs text-gray-600 mb-2">提案 年長 ${vc.elder}・若い ${vc.young}・みんな ${vc.both}　💬 ひとこと ${notes + plan.comments.length}件</p>
+              ${last ? `<div class="text-sm bg-yellow-50 text-gray-700 p-2 rounded border border-yellow-200 mb-2 line-clamp-2"><strong>${esc(whoInfo(plan, last.by).name)}：</strong>${esc(last.text)}</div>` : ''}
             </div>
             <div class="pt-3 border-t border-gray-100 flex items-center justify-between mt-2">
               <label class="flex items-center space-x-1.5 text-sm text-classic-navy cursor-pointer select-none">
@@ -1410,8 +1645,8 @@
                 <span class="font-bold">見比べる</span>
               </label>
               <div class="flex items-center space-x-1">
-                <button data-action="view-plan" class="px-3 py-1.5 text-sm bg-classic-navy text-white rounded hover:bg-gray-800 font-serif">ひらく</button>
-                <button data-action="delete-plan" title="このプランを消す" aria-label="このプランを消す" class="p-1.5 text-gray-400 hover:text-red-600">
+                <button type="button" data-action="view-plan" class="px-3 py-1.5 text-sm bg-classic-navy text-white rounded hover:bg-gray-800 font-serif">ひらく</button>
+                <button type="button" data-action="delete-plan" title="このプランを消す" aria-label="このプランを消す" class="p-1.5 text-gray-400 hover:text-red-600">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </div>
@@ -1427,16 +1662,24 @@
     }
 
     /* ====================================================================
-       7. 一覧の操作（ひらく・消す・メモ・見比べ選択）
+       8. 操作（一覧・旅程の編集・メンバー・ひとこと）
        ==================================================================== */
     function findPlan(planId) {
       return historyPlans.find(p => p.id === planId);
+    }
+
+    function resetEditing() {
+      editingStepId = null;
+      editingTitle = false;
+      editingMakers = false;
     }
 
     function viewPlanDetail(planId) {
       const p = findPlan(planId);
       if (!p) return;
       currentPlan = p;
+      resetEditing();
+      saveState();
       renderCurrentPlan(p);
       renderHistoryCards();
       playChime('bell');
@@ -1451,6 +1694,7 @@
       selectedForCompare.delete(planId);
       if (currentPlan && currentPlan.id === planId) {
         currentPlan = historyPlans[0] || null;
+        resetEditing();
       }
       saveState();
       renderAll();
@@ -1459,24 +1703,14 @@
 
     function clearHistory() {
       if (historyPlans.length === 0) return;
-      if (!confirm(`作ったプラン ${historyPlans.length} 件をすべて消しますか？\n元に戻せません。`)) return;
+      if (!confirm(`作ったプラン ${historyPlans.length} 件をすべて消しますか？\n元に戻せません。先に「ファイルに書き出す」で控えを残すこともできます。`)) return;
       historyPlans = [];
       selectedForCompare.clear();
       currentPlan = null;
+      resetEditing();
       saveState();
       renderAll();
       showToast("プランをすべて消しました");
-    }
-
-    function saveMemo() {
-      const input = document.getElementById('plan-memo-input');
-      if (!currentPlan || !input) return;
-      currentPlan.memo = input.value.trim();
-      touch(currentPlan);
-      saveState();
-      renderHistoryCards();
-      playChime('bell');
-      showToast("メモを保存しました");
     }
 
     function toggleCompareSelect(planId) {
@@ -1502,8 +1736,173 @@
       document.getElementById('btn-compare').classList.toggle('opacity-70', count < 2);
     }
 
+    // --- 旅程の編集 ---
+    function locateStep(plan, stepId) {
+      for (let di = 0; di < plan.days.length; di++) {
+        const i = plan.days[di].steps.findIndex(s => s.id === stepId);
+        if (i >= 0) return { di, i };
+      }
+      return null;
+    }
+
+    // 時刻が入っていれば、その時刻の位置に差し込む（なければ最後へ）
+    function insertByTime(steps, step) {
+      const t = toMin(step.time);
+      if (t === null) { steps.push(step); return; }
+      const at = steps.findIndex(s => (toMin(s.time) ?? -1) > t);
+      if (at < 0) steps.push(step); else steps.splice(at, 0, step);
+    }
+
+    function saveStepForm(formEl) {
+      const plan = currentPlan;
+      if (!plan) return;
+      const get = name => formEl.querySelector(`[name="${name}"]`).value;
+      const values = {
+        time: str(get('time'), 10),
+        action: str(get('action').trim(), 200),
+        detail: str(get('detail').trim(), 1000),
+        by: str(get('by'), 90) || 'both',
+        note: str(get('note').trim(), 1000)
+      };
+      if (!values.action && !values.note) {
+        showToast('「予定」か「ひとこと」を入れてください', '⚠');
+        return;
+      }
+      if (!values.action) values.action = '（予定名なし）';
+      const stepId = formEl.dataset.stepId;
+      if (stepId) {
+        const loc = locateStep(plan, stepId);
+        if (loc) Object.assign(plan.days[loc.di].steps[loc.i], values);
+      } else {
+        const di = Number(formEl.dataset.dayIndex) || 0;
+        insertByTime(plan.days[di].steps, { id: newId('s'), ...values });
+      }
+      editingStepId = null;
+      commit(plan);
+      playChime('bell');
+      showToast(stepId ? '予定をなおしました' : '予定を加えました');
+    }
+
+    function moveStep(stepId, dir) {
+      const plan = currentPlan;
+      const loc = plan && locateStep(plan, stepId);
+      if (!loc) return;
+      const steps = plan.days[loc.di].steps;
+      const [step] = steps.splice(loc.i, 1);
+      const target = loc.i + dir;
+      if (target < 0) {
+        if (loc.di === 0) { steps.splice(loc.i, 0, step); return; }
+        plan.days[loc.di - 1].steps.push(step);            // 前の日の最後へ
+      } else if (target > steps.length) {
+        if (loc.di === plan.days.length - 1) { steps.splice(loc.i, 0, step); return; }
+        plan.days[loc.di + 1].steps.unshift(step);         // 次の日の最初へ
+      } else {
+        steps.splice(target, 0, step);
+      }
+      commit(plan);
+    }
+
+    function deleteStep(stepId) {
+      const plan = currentPlan;
+      const loc = plan && locateStep(plan, stepId);
+      if (!loc) return;
+      const step = plan.days[loc.di].steps[loc.i];
+      if (!confirm(`「${step.action}」を旅程から消しますか？${step.note ? '\n（ひとことも一緒に消えます）' : ''}`)) return;
+      plan.days[loc.di].steps.splice(loc.i, 1);
+      if (editingStepId === stepId) editingStepId = null;
+      commit(plan);
+      showToast('予定を消しました');
+    }
+
+    function restoreSkipped(skipId) {
+      const plan = currentPlan;
+      if (!plan) return;
+      const idx = plan.skipped.findIndex(s => s.id === skipId);
+      if (idx < 0) return;
+      const [s] = plan.skipped.splice(idx, 1);
+      const di = Math.min(s.dayIndex, plan.days.length - 1);
+      const { dayIndex, ...step } = s;
+      insertByTime(plan.days[di].steps, step);
+      commit(plan);
+      showToast('旅程に戻しました');
+    }
+
+    function saveTitle() {
+      const input = document.getElementById('title-input');
+      if (!currentPlan || !input) return;
+      const v = input.value.trim();
+      if (v) currentPlan.title = str(v, 200);
+      editingTitle = false;
+      commit(currentPlan);
+    }
+
+    // --- メンバー ---
+    let memberSaveTimer = null;
+    function scheduleMemberSave() {
+      clearTimeout(memberSaveTimer);
+      memberSaveTimer = setTimeout(() => {
+        if (currentPlan && editingMakers) touch(currentPlan);
+        saveState();
+      }, 400);
+    }
+
+    function addMember(scope) {
+      const list = memberList(scope);
+      if (!list) return;
+      if (list.length >= 8) { showToast('8人までです', '⚠'); return; }
+      const hasYoung = list.some(m => m.gen === 'young');
+      list.push(makeMember(list.length === 0 ? 'elder' : (hasYoung ? 'elder' : 'young')));
+      saveState();
+      if (scope === 'global') renderMembersPanel(); else renderCurrentPlan(currentPlan);
+      const rows = document.querySelectorAll(`[data-scope="${scope}"][data-member-id] input`);
+      if (rows.length) rows[rows.length - 1].focus();
+    }
+
+    function removeMember(scope, memberId) {
+      const list = memberList(scope);
+      if (!list) return;
+      const idx = list.findIndex(m => m.id === memberId);
+      if (idx < 0) return;
+      if (list[idx].name && !confirm(`「${list[idx].name}」を外しますか？`)) return;
+      list.splice(idx, 1);
+      saveState();
+      if (scope === 'global') renderMembersPanel(); else renderCurrentPlan(currentPlan);
+    }
+
+    function updateMemberField(el) {
+      const row = el.closest('[data-member-id]');
+      const list = row && memberList(row.dataset.scope);
+      const m = list && list.find(x => x.id === row.dataset.memberId);
+      if (!m) return;
+      if (el.dataset.memberField === 'name') m.name = str(el.value, 30);
+      if (el.dataset.memberField === 'gen') m.gen = oneOf(el.value, ['elder', 'young', 'other'], 'other');
+      scheduleMemberSave();
+    }
+
+    // --- ふたりのひとこと ---
+    function addComment() {
+      const plan = currentPlan;
+      const textEl = document.getElementById('comment-text');
+      const byEl = document.getElementById('comment-by');
+      if (!plan || !textEl) return;
+      const text = textEl.value.trim();
+      if (!text) { showToast('ひとことを入れてください', '⚠'); textEl.focus(); return; }
+      plan.comments.push({ id: newId('c'), by: str(byEl.value, 90) || 'both', text: str(text, 1000), at: new Date().toISOString() });
+      commit(plan);
+      playChime('bell');
+      showToast('書きこみました');
+    }
+
+    function deleteComment(commentId) {
+      const plan = currentPlan;
+      if (!plan) return;
+      if (!confirm('この書き込みを消しますか？')) return;
+      plan.comments = plan.comments.filter(c => c.id !== commentId);
+      commit(plan);
+    }
+
     /* ====================================================================
-       8. プランの見比べ（横並びの表）
+       9. プランの見比べ（横並びの表）
        ==================================================================== */
     function compareSelectedPlans() {
       if (selectedForCompare.size < 2) {
@@ -1558,11 +1957,28 @@
                 <div class="mb-2">
                   <span class="font-bold text-classic-navy">${esc(d.label)}</span>
                   <ul class="list-disc list-inside space-y-0.5 text-gray-700">
-                    ${d.steps.map(s => `<li>${esc(s.time)} ${esc(s.action)}</li>`).join('')}
+                    ${d.steps.filter(s => s.kind !== 'rest').map(s => {
+                      const w = whoInfo(p, s.by);
+                      return `<li>${esc(s.time)} ${esc(s.action)}${w.gen !== 'tool' ? ` <span class="text-xs font-bold px-1.5 rounded border ${GEN[w.gen].badge}">${esc(w.name)}</span>` : ''}</li>`;
+                    }).join('')}
                   </ul>
                 </div>`).join(''))}
               ${row('お土産', (p, h) => h.souvenirs.map(s => `<div class="mb-1">・${esc(s.name)}</div>`).join(''))}
-              ${row('メモ', p => p.memo ? esc(p.memo) : '<span class="text-gray-400">—</span>')}
+              ${row('作った人', p => p.makers.length ? p.makers.map(m => `<span class="inline-block text-xs font-bold px-2 py-0.5 mr-1 mb-1 rounded-full border ${GEN[m.gen].badge}">${esc(memberLabel(m))}</span>`).join('') : '<span class="text-gray-400">—</span>')}
+              ${row('だれの提案か', p => {
+                const vc = voiceCounts(p);
+                return ['elder', 'young', 'other', 'both', 'tool'].filter(g => vc[g]).map(g => `${esc(GEN[g].label)} ${vc[g]}件`).join('<br>');
+              })}
+              ${row('ひとこと', p => {
+                const notes = [];
+                p.days.forEach(d => d.steps.forEach(s => { if (s.note) notes.push({ by: s.by, text: `${s.action}：${s.note}` }); }));
+                p.comments.forEach(c => notes.push({ by: c.by, text: c.text }));
+                if (!notes.length) return '<span class="text-gray-400">—</span>';
+                return notes.slice(0, 6).map(n => {
+                  const w = whoInfo(p, n.by);
+                  return `<div class="mb-1.5 border-l-4 pl-2 ${GEN[w.gen].bubble}"><strong class="text-xs">${esc(w.name)}</strong><br>${esc(n.text)}</div>`;
+                }).join('') + (notes.length > 6 ? `<span class="text-xs text-gray-500">ほか ${notes.length - 6} 件</span>` : '');
+              })}
               <tr class="bg-gray-50">
                 <th scope="row" class="p-3 border border-gray-300 font-bold text-gray-700 text-left">このプランを</th>
                 ${plans.map(p => `
@@ -1586,23 +2002,29 @@
     }
 
     /* ====================================================================
-       9. 旅程を文字でコピー
+       10. 旅程を文字でコピー
        ==================================================================== */
     function planToText(plan) {
       const h = getHotel(plan);
       let text = `【旅程】${plan.title}\n`;
       text += `宿泊先：${h.name}（${h.location}）\n`;
       text += `条件：${LABELS.season[plan.season]}／${LABELS.nights[plan.nights]}／${LABELS.companion[plan.companion]}／${LABELS.pace[plan.pace]}\n`;
+      if (plan.makers.length) text += `作った人：${plan.makers.map(memberLabel).join('、')}\n`;
       plan.days.forEach(d => {
         text += `\n■ ${d.label}（${d.theme}）\n`;
         d.steps.forEach(s => {
-          text += `・${s.time} ${s.action}${s.detail ? ' - ' + s.detail : ''}\n`;
+          const w = whoInfo(plan, s.by);
+          text += `・${s.time} ${s.action}${w.gen !== 'tool' ? `［提案：${w.name}］` : ''}${s.detail ? ' - ' + s.detail : ''}\n`;
+          if (s.note) text += `　💬 ${w.name}：${s.note}\n`;
         });
       });
       text += `\n■ 夕食：${h.gourmet.dinner}\n`;
       text += `■ おすすめのお土産：\n`;
       h.souvenirs.forEach(s => { text += `・${s.name}\n`; });
-      if (plan.memo) text += `\n■ メモ：${plan.memo}\n`;
+      if (plan.comments.length) {
+        text += `\n■ ふたりのひとこと\n`;
+        plan.comments.forEach(c => { text += `・${whoInfo(plan, c.by).full}：${c.text}\n`; });
+      }
       return text;
     }
 
@@ -1640,7 +2062,7 @@
     }
 
     /* ====================================================================
-       9.5 保存と引き継ぎ（localStorage への自動保存、JSON ファイルの書き出し・読み込み）
+       11. 保存と引き継ぎ（localStorage への自動保存、JSON ファイルの書き出し・読み込み）
        ==================================================================== */
     const STORAGE_KEY = 'cht-planner-v2';
     const DATA_FORMAT = 'classic-hotel-travel';
@@ -1700,9 +2122,29 @@
         skipped: Array.isArray(raw.skipped) ? raw.skipped.slice(0, 40).map(s => ({
           ...normalizeStep(s), dayIndex: Math.max(0, Math.min(6, Number(s && s.dayIndex) || 0))
         })) : [],
-        memo: str(raw.memo, 1000)
+        makers: normalizeMembers(raw.makers),
+        comments: Array.isArray(raw.comments) ? raw.comments.slice(0, 200).map(c => ({
+          id: safeId(c && c.id, 'c'),
+          by: str(c && c.by, 90) || 'both',
+          text: str(c && c.text, 1000),
+          at: isoOr(c && c.at, now)
+        })).filter(c => c.text) : []
       };
+      // 旧版のメモ欄は「ふたりのひとこと」の1件目として引き継ぐ
+      const oldMemo = str(raw.memo, 1000).trim();
+      if (oldMemo && plan.comments.length === 0) {
+        plan.comments.push({ id: newId('c'), by: 'both', text: oldMemo, at: plan.updatedAt });
+      }
       return plan;
+    }
+
+    function normalizeMembers(list) {
+      if (!Array.isArray(list)) return [];
+      return list.slice(0, 8).map(m => ({
+        id: safeId(m && m.id, 'm'),
+        name: str(m && m.name, 30),
+        gen: oneOf(m && m.gen, ['elder', 'young', 'other'], 'other')
+      }));
     }
 
     function buildSaveData() {
@@ -1711,6 +2153,7 @@
         version: DATA_VERSION,
         savedAt: new Date().toISOString(),
         currentPlanId: currentPlan ? currentPlan.id : null,
+        members,
         plans: historyPlans
       };
     }
@@ -1769,6 +2212,9 @@
     function applyLoadedData(data, replace) {
       if (!data || typeof data !== 'object' || !Array.isArray(data.plans)) throw new Error('形式が違います');
       const plans = data.plans.map(normalizePlan).filter(Boolean);
+      const loadedMembers = normalizeMembers(data.members);
+      // メンバーは、置き換え時か、今のメンバーに名前が1つも入っていないときだけ取り込む
+      if (loadedMembers.length && (replace || !members.some(m => m.name))) members = loadedMembers;
       if (replace) {
         historyPlans = plans;
         currentPlan = historyPlans.find(p => p.id === data.currentPlanId) || historyPlans[0] || null;
@@ -1832,7 +2278,7 @@
     }
 
     /* ====================================================================
-       10. 画面操作の受け付け（data-action によるイベント委譲）
+       12. 画面操作の受け付け（data-action によるイベント委譲）
        ==================================================================== */
     function planIdFrom(el) {
       const holder = el.closest('[data-plan-id]');
@@ -1844,19 +2290,52 @@
       if (!el || el.tagName === 'INPUT') return;
       const action = el.dataset.action;
       const planId = planIdFrom(el);
+      const stepEl = el.closest('[data-step-id]');
+      const stepId = stepEl ? stepEl.dataset.stepId : null;
+      const memberEl = el.closest('[data-member-id]');
       switch (action) {
         case 'view-plan': viewPlanDetail(planId); break;
         case 'delete-plan': deletePlan(planId); break;
-        case 'save-memo': saveMemo(); break;
         case 'copy-plan': copyPlanText(); break;
-        case 'print': window.print(); break;
+        case 'print': editingStepId = null; editingTitle = false; editingMakers = false; renderCurrentPlan(currentPlan); window.print(); break;
         case 'open-from-compare': closeCompareModal(); viewPlanDetail(planId); break;
         case 'export-json': exportJSON(); break;
+        // 旅程の編集
+        case 'step-edit': editingStepId = stepId; renderCurrentPlan(currentPlan); focusStepForm(); break;
+        case 'step-add': editingStepId = `new:${el.dataset.dayIndex}`; renderCurrentPlan(currentPlan); focusStepForm(); break;
+        case 'step-cancel': editingStepId = null; renderCurrentPlan(currentPlan); break;
+        case 'step-save': saveStepForm(el.closest('[data-step-form]')); break;
+        case 'step-up': moveStep(stepId, -1); break;
+        case 'step-down': moveStep(stepId, 1); break;
+        case 'step-delete': deleteStep(stepId); break;
+        case 'skip-restore': restoreSkipped(el.closest('[data-skip-id]').dataset.skipId); break;
+        // タイトル・作った人
+        case 'title-edit': editingTitle = true; renderCurrentPlan(currentPlan); document.getElementById('title-input').focus(); break;
+        case 'title-save': saveTitle(); break;
+        case 'title-cancel': editingTitle = false; renderCurrentPlan(currentPlan); break;
+        case 'makers-edit': editingMakers = true; renderCurrentPlan(currentPlan); break;
+        case 'makers-done': editingMakers = false; commit(currentPlan); break;
+        // メンバー
+        case 'member-add': addMember(el.dataset.scope); break;
+        case 'member-remove': removeMember(memberEl.dataset.scope, memberEl.dataset.memberId); break;
+        // ふたりのひとこと
+        case 'comment-add': addComment(); break;
+        case 'comment-delete': deleteComment(el.closest('[data-comment-id]').dataset.commentId); break;
       }
+    });
+
+    function focusStepForm() {
+      const f = document.querySelector('[data-step-form] [name="action"]');
+      if (f) { f.focus(); f.closest('[data-step-form]').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    }
+
+    document.addEventListener('input', e => {
+      if (e.target.dataset && e.target.dataset.memberField) updateMemberField(e.target);
     });
 
     document.addEventListener('change', e => {
       const el = e.target;
+      if (el.dataset && el.dataset.memberField) updateMemberField(el);
       if (el.dataset && el.dataset.action === 'toggle-compare') toggleCompareSelect(planIdFrom(el));
       if (el.id === 'import-file') {
         importJSON(el.files && el.files[0]);
@@ -1866,10 +2345,11 @@
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closeCompareModal();
+      if (e.key === 'Enter' && e.target.id === 'title-input') { e.preventDefault(); saveTitle(); }
     });
 
     /* ====================================================================
-       11. 起動時の処理
+       13. 起動時の処理
        ==================================================================== */
     window.addEventListener('load', () => {
       let savedFont = 'normal';
@@ -1883,9 +2363,14 @@
 
       // 保存データがあればそれを使う（すべて消した後の「0件」もそのまま尊重する）
       if (loadState()) {
+        if (members.length === 0) members = defaultMembers();
+        renderMembersPanel();
         renderAll();
         return;
       }
+
+      members = defaultMembers();
+      renderMembersPanel();
 
       // 初めて開いたときだけ、見比べをすぐ試せるよう見本のプランを2件用意する
       const samples = [
