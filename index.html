@@ -1198,7 +1198,8 @@
         skipped: built.skipped,
         // 「いっしょに考える人」をこのプランの「作った人」として写し取る（IDは共通）
         makers: members.map(m => ({ ...m })),
-        comments: []
+        comments: [],
+        evaluations: {}  // { メンバーID: { want: 0〜5, good: "良いと思った点" } }
       };
     }
 
@@ -1637,6 +1638,7 @@
               </div>
               ${plan.makers.length ? `<p class="text-sm text-gray-700 mb-1">作った人：${plan.makers.map(m => esc(memberName(m))).join('・')}</p>` : ''}
               <p class="text-xs text-gray-600 mb-2">提案 年長 ${vc.elder}・若い ${vc.young}・みんな ${vc.both}　💬 ひとこと ${notes + plan.comments.length}件</p>
+              ${(() => { const a = avgWant(plan, null, comparePeople([plan])); return a !== null ? `<p class="text-sm text-gray-700 mb-2">行きたい度 ${starText(a)}</p>` : ''; })()}
               ${last ? `<div class="text-sm bg-yellow-50 text-gray-700 p-2 rounded border border-yellow-200 mb-2 line-clamp-2"><strong>${esc(whoInfo(plan, last.by).name)}：</strong>${esc(last.text)}</div>` : ''}
             </div>
             <div class="pt-3 border-t border-gray-100 flex items-center justify-between mt-2">
@@ -1924,8 +1926,109 @@
       playChime('bell');
     }
 
+    // 見比べに参加する人：見比べる各プランの「作った人」と「いっしょに考える人」を合わせたもの（IDで重複を除く）
+    function comparePeople(plans) {
+      const seen = new Map();
+      [...members, ...plans.flatMap(p => p.makers)].forEach(m => { if (!seen.has(m.id)) seen.set(m.id, m); });
+      return [...seen.values()];
+    }
+
+    function avgWant(plan, gen, people) {
+      const vals = people
+        .filter(m => !gen || m.gen === gen)
+        .map(m => (plan.evaluations[m.id] || {}).want || 0)
+        .filter(v => v > 0);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    }
+
+    function starText(v) {
+      if (v === null) return '<span class="text-gray-400">まだ</span>';
+      const full = Math.round(v);
+      return `<span class="text-classic-gold tracking-tight" aria-hidden="true">${'★'.repeat(full)}${'☆'.repeat(5 - full)}</span> <span class="font-bold">${v.toFixed(1)}</span>`;
+    }
+
+    function renderRatingRows(plans, people) {
+      if (!people.length) {
+        return `<tr><td colspan="${plans.length + 1}" class="p-3 border border-gray-300 text-sm text-gray-600">「いっしょに考える人」を登録すると、ここで一人ずつ評価できます。</td></tr>`;
+      }
+      const personRows = people.map(m => `
+        <tr>
+          <th scope="row" class="p-3 border border-gray-300 text-left align-top bg-white">
+            <span class="inline-block text-sm font-bold px-2.5 py-1 rounded-lg border ${GEN[m.gen].badge} leading-snug">${esc(memberName(m))}<br><span class="text-xs font-normal">${esc(GEN[m.gen].label)}</span></span>
+          </th>
+          ${plans.map(p => {
+            const ev = p.evaluations[m.id] || { want: 0, good: '' };
+            return `
+              <td class="p-3 border border-gray-300 align-top" data-plan-id="${esc(p.id)}" data-member-id="${esc(m.id)}">
+                <div class="flex items-center gap-0.5 mb-1.5" role="group" aria-label="${esc(memberName(m))}の行きたい度">
+                  <span class="text-xs text-gray-600 mr-1">行きたい度</span>
+                  ${[1, 2, 3, 4, 5].map(v => `
+                    <button type="button" data-action="rate" data-value="${v}" aria-label="${v}つ星" aria-pressed="${ev.want === v}"
+                      class="text-2xl leading-none px-0.5 ${v <= ev.want ? 'text-classic-gold' : 'text-gray-300'} hover:text-classic-goldHover">★</button>`).join('')}
+                </div>
+                <label class="block text-xs text-gray-600">良いと思った点
+                  <textarea data-eval-good rows="2" maxlength="300" placeholder="例：駅から近い／昔の写真と同じ景色が見られる"
+                    class="w-full mt-0.5 p-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-classic-gold">${esc(ev.good)}</textarea>
+                </label>
+              </td>`;
+          }).join('')}
+        </tr>`).join('');
+
+      const genRow = `
+        <tr class="bg-[#FAF7F0]">
+          <th scope="row" class="p-3 border border-gray-300 text-left align-top font-bold text-classic-navy">世代ごとの<br>行きたい度</th>
+          ${plans.map(p => {
+            const e = avgWant(p, 'elder', people), y = avgWant(p, 'young', people), all = avgWant(p, null, people);
+            const split = e !== null && y !== null && Math.abs(e - y) >= 2;
+            return `
+              <td class="p-3 border border-gray-300 align-top text-sm">
+                <div><span class="inline-block w-20 font-bold text-[#5B1E2B]">年長の方</span>${starText(e)}</div>
+                <div><span class="inline-block w-20 font-bold text-[#1B3B6F]">若い方</span>${starText(y)}</div>
+                <div class="mt-1 pt-1 border-t border-gray-200"><span class="inline-block w-20 font-bold">みんな</span>${starText(all)}</div>
+                ${split ? '<p class="mt-1.5 text-xs font-bold text-classic-burgundy">💬 世代で評価が分かれています。理由を聞き合ってみましょう</p>' : ''}
+              </td>`;
+          }).join('')}
+        </tr>`;
+
+      return `
+        <tr><th colspan="${plans.length + 1}" class="p-2 border border-gray-300 bg-classic-navy text-white text-left font-serif">みんなの評価（一人ずつ入れてください）</th></tr>
+        ${personRows}
+        ${genRow}
+        <tr><th colspan="${plans.length + 1}" class="p-2 border border-gray-300 bg-classic-navy text-white text-left font-serif">プランの中身</th></tr>`;
+    }
+
+    function rate(planId, memberId, value) {
+      const plan = findPlan(planId);
+      if (!plan) return;
+      const ev = plan.evaluations[memberId] || { want: 0, good: '' };
+      ev.want = ev.want === value ? 0 : value; // 同じ星をもう一度押すと取り消し
+      plan.evaluations[memberId] = ev;
+      touch(plan);
+      saveState();
+      const box = document.getElementById('compare-modal-content');
+      const top = box.scrollTop, left = box.scrollLeft;
+      renderCompareTable();
+      box.scrollTop = top; box.scrollLeft = left;
+      renderHistoryCards();
+    }
+
+    let evalSaveTimer = null;
+    function updateEvalGood(el) {
+      const cell = el.closest('[data-member-id]');
+      const plan = cell && findPlan(cell.dataset.planId);
+      if (!plan) return;
+      const id = cell.dataset.memberId;
+      const ev = plan.evaluations[id] || { want: 0, good: '' };
+      ev.good = str(el.value, 300);
+      plan.evaluations[id] = ev;
+      touch(plan);
+      clearTimeout(evalSaveTimer);
+      evalSaveTimer = setTimeout(saveState, 400);
+    }
+
     function renderCompareTable() {
       const plans = historyPlans.filter(p => selectedForCompare.has(p.id));
+      const people = comparePeople(plans);
       const colWidth = plans.length === 2 ? 'w-1/2 min-w-[280px]' : 'w-1/3 min-w-[240px]';
       const row = (label, cell) => `
         <tr>
@@ -1938,7 +2041,7 @@
           <table class="w-full border-collapse border border-gray-300 text-sm">
             <thead>
               <tr class="bg-[#FAF7F0]">
-                <th class="p-3 border border-gray-300 text-left w-36 font-serif text-classic-navy bg-gray-100">見比べる点</th>
+                <th class="p-3 border border-gray-300 text-left w-40 min-w-[9rem] font-serif text-classic-navy bg-gray-100">見比べる点</th>
                 ${plans.map(p => `
                   <th class="p-4 border border-gray-300 ${colWidth} text-left">
                     <span class="text-xs px-2 py-0.5 rounded text-white ${esc(getHotel(p).bgBadge)} font-bold mb-1 inline-block">${esc(getHotel(p).name)}</span>
@@ -1947,6 +2050,7 @@
               </tr>
             </thead>
             <tbody>
+              ${renderRatingRows(plans, people)}
               ${row('条件', p => `
                 <span class="inline-block bg-classic-sand px-2 py-0.5 rounded text-xs font-bold text-classic-burgundy mb-1">${esc(LABELS.purpose[p.purpose])}</span>
                 <span class="block text-gray-700">${esc(LABELS.season[p.season])}・${esc(LABELS.nights[p.nights])}・${esc(LABELS.companion[p.companion])}・${esc(LABELS.pace[p.pace])}</span>`)}
@@ -2021,6 +2125,17 @@
       text += `\n■ 夕食：${h.gourmet.dinner}\n`;
       text += `■ おすすめのお土産：\n`;
       h.souvenirs.forEach(s => { text += `・${s.name}\n`; });
+      const raters = comparePeople([plan]).filter(m => {
+        const ev = plan.evaluations[m.id];
+        return ev && (ev.want || ev.good);
+      });
+      if (raters.length) {
+        text += `\n■ みんなの評価\n`;
+        raters.forEach(m => {
+          const ev = plan.evaluations[m.id];
+          text += `・${memberLabel(m)}：行きたい度 ${ev.want ? '★'.repeat(ev.want) : '－'}${ev.good ? '／良い点：' + ev.good : ''}\n`;
+        });
+      }
       if (plan.comments.length) {
         text += `\n■ ふたりのひとこと\n`;
         plan.comments.forEach(c => { text += `・${whoInfo(plan, c.by).full}：${c.text}\n`; });
@@ -2128,7 +2243,8 @@
           by: str(c && c.by, 90) || 'both',
           text: str(c && c.text, 1000),
           at: isoOr(c && c.at, now)
-        })).filter(c => c.text) : []
+        })).filter(c => c.text) : [],
+        evaluations: normalizeEvaluations(raw.evaluations)
       };
       // 旧版のメモ欄は「ふたりのひとこと」の1件目として引き継ぐ
       const oldMemo = str(raw.memo, 1000).trim();
@@ -2136,6 +2252,17 @@
         plan.comments.push({ id: newId('c'), by: 'both', text: oldMemo, at: plan.updatedAt });
       }
       return plan;
+    }
+
+    function normalizeEvaluations(raw) {
+      const out = {};
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+      Object.keys(raw).slice(0, 20).forEach(k => {
+        if (!/^[A-Za-z0-9_-]{1,80}$/.test(k) || ['__proto__', 'constructor', 'prototype'].includes(k)) return;
+        const v = raw[k] || {};
+        out[k] = { want: Math.max(0, Math.min(5, Math.round(Number(v.want) || 0))), good: str(v.good, 300) };
+      });
+      return out;
     }
 
     function normalizeMembers(list) {
@@ -2321,6 +2448,8 @@
         // ふたりのひとこと
         case 'comment-add': addComment(); break;
         case 'comment-delete': deleteComment(el.closest('[data-comment-id]').dataset.commentId); break;
+        // 見比べ表での評価
+        case 'rate': rate(planId, memberEl.dataset.memberId, Number(el.dataset.value)); break;
       }
     });
 
@@ -2331,6 +2460,7 @@
 
     document.addEventListener('input', e => {
       if (e.target.dataset && e.target.dataset.memberField) updateMemberField(e.target);
+      if (e.target.hasAttribute && e.target.hasAttribute('data-eval-good')) updateEvalGood(e.target);
     });
 
     document.addEventListener('change', e => {
