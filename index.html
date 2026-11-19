@@ -156,7 +156,7 @@
         </h2>
         <p class="text-sm sm:text-base text-gray-700 leading-relaxed font-serif">
           条件を選ぶと、旅程の「たたき台」ができます。そこへ年長の方の思い出や、若い方が調べたことを書き足して、自分たちだけの旅に仕上げてください。<br class="hidden sm:inline">
-          条件を変えて何度でも作り直せます。作ったプランは下に並び、見比べながら話し合えます。
+          条件を変えて何度でも作り直せます。作ったプランは下に並び、見比べながら話し合えます。書き込んだ内容はこの端末に自動で保存され、ファイルに書き出して次回へ持ち越せます。
         </p>
       </div>
       <div class="flex-shrink-0 self-end md:self-center">
@@ -367,6 +367,7 @@
           <p class="text-sm text-gray-600 mt-1">
             作ったプランがここに並びます。2〜3件えらんで並べると、話し合いに使えます。
           </p>
+          <p id="save-status" class="text-xs text-gray-500 mt-1" aria-live="polite">この端末（ブラウザ）に自動で保存されます。</p>
         </div>
 
         <!-- 比較操作ボタン -->
@@ -380,6 +381,20 @@
           <button onclick="clearHistory()" class="px-3 py-2 text-xs text-gray-500 hover:text-red-700 hover:underline">
             すべて消す
           </button>
+        </div>
+      </div>
+
+      <!-- 保存と引き継ぎ（ファイルの書き出し・読み込み） -->
+      <div class="no-print bg-white border border-classic-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <p class="text-sm text-gray-700">
+          <strong class="text-classic-navy">ファイルで持ち運ぶ</strong>：書き出したファイルを相手に送ったり、次の集まりで読み込んだりできます。書き込みや写真も一緒に保存されます。
+        </p>
+        <div class="flex flex-wrap gap-2 shrink-0">
+          <button type="button" data-action="export-json" class="px-4 py-2 bg-classic-burgundy hover:bg-[#722736] text-white rounded-lg text-sm font-bold shadow">ファイルに書き出す</button>
+          <label class="px-4 py-2 bg-white border-2 border-classic-burgundy text-classic-burgundy hover:bg-[#FAF4E8] rounded-lg text-sm font-bold cursor-pointer focus-within:ring-2 focus-within:ring-classic-gold">
+            ファイルを読み込む
+            <input type="file" id="import-file" accept=".json,application/json" class="sr-only">
+          </label>
         </div>
       </div>
 
@@ -1184,6 +1199,7 @@
       const plan = createPlan(readForm());
       currentPlan = plan;
       historyPlans.unshift(plan);
+      saveState();
       renderAll();
       if (window.innerWidth < 1024) {
         document.getElementById('plan-detail-section').scrollIntoView({ behavior: 'smooth' });
@@ -1436,6 +1452,7 @@
       if (currentPlan && currentPlan.id === planId) {
         currentPlan = historyPlans[0] || null;
       }
+      saveState();
       renderAll();
       showToast("プランを消しました");
     }
@@ -1446,6 +1463,7 @@
       historyPlans = [];
       selectedForCompare.clear();
       currentPlan = null;
+      saveState();
       renderAll();
       showToast("プランをすべて消しました");
     }
@@ -1454,6 +1472,8 @@
       const input = document.getElementById('plan-memo-input');
       if (!currentPlan || !input) return;
       currentPlan.memo = input.value.trim();
+      touch(currentPlan);
+      saveState();
       renderHistoryCards();
       playChime('bell');
       showToast("メモを保存しました");
@@ -1620,6 +1640,198 @@
     }
 
     /* ====================================================================
+       9.5 保存と引き継ぎ（localStorage への自動保存、JSON ファイルの書き出し・読み込み）
+       ==================================================================== */
+    const STORAGE_KEY = 'cht-planner-v2';
+    const DATA_FORMAT = 'classic-hotel-travel';
+    const DATA_VERSION = 2;
+    let storageWarned = false;
+
+    // 読み込んだデータは信用せず、型と長さをそろえてから使う
+    function str(v, max = 2000) {
+      return (typeof v === 'string' ? v : (typeof v === 'number' ? String(v) : '')).slice(0, max);
+    }
+    function oneOf(v, list, def) {
+      return list.includes(v) ? v : def;
+    }
+    function safeId(v, prefix) {
+      return (typeof v === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(v)) ? v : newId(prefix);
+    }
+    function isoOr(v, def) {
+      return (typeof v === 'string' && !isNaN(new Date(v))) ? v : def;
+    }
+
+    function normalizeStep(raw) {
+      const s = raw && typeof raw === 'object' ? raw : {};
+      const step = {
+        id: safeId(s.id, 's'),
+        time: str(s.time, 10),
+        action: str(s.action, 200),
+        detail: str(s.detail, 1000),
+        by: str(s.by, 90) || 'tool',
+        note: str(s.note, 1000)
+      };
+      if (s.kind === 'rest') step.kind = 'rest';
+      return step;
+    }
+
+    function normalizePlan(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const now = new Date().toISOString();
+      const hotelKey = HOTELS_DATA[raw.hotelKey] ? raw.hotelKey : null;
+      if (!hotelKey) return null;
+      const days = Array.isArray(raw.days) ? raw.days.slice(0, 7).map(d => ({
+        label: str(d && d.label, 30) || '日程',
+        theme: str(d && d.theme, 200),
+        steps: Array.isArray(d && d.steps) ? d.steps.slice(0, 40).map(normalizeStep) : []
+      })) : [];
+      const plan = {
+        id: safeId(raw.id, 'plan'),
+        createdAt: isoOr(raw.createdAt, now),
+        updatedAt: isoOr(raw.updatedAt, now),
+        hotelKey,
+        purpose: oneOf(raw.purpose, Object.keys(LABELS.purpose), 'architecture'),
+        season: oneOf(raw.season, Object.keys(LABELS.season), 'autumn'),
+        nights: oneOf(raw.nights, Object.keys(LABELS.nights), '1night'),
+        companion: oneOf(raw.companion, Object.keys(LABELS.companion), 'other'),
+        pace: oneOf(raw.pace, Object.keys(LABELS.pace), 'relaxed'),
+        title: str(raw.title, 200) || `${HOTELS_DATA[hotelKey].name}の旅`,
+        days: days.length ? days : buildDays(HOTELS_DATA[hotelKey], '1night', 'relaxed').days,
+        skipped: Array.isArray(raw.skipped) ? raw.skipped.slice(0, 40).map(s => ({
+          ...normalizeStep(s), dayIndex: Math.max(0, Math.min(6, Number(s && s.dayIndex) || 0))
+        })) : [],
+        memo: str(raw.memo, 1000)
+      };
+      return plan;
+    }
+
+    function buildSaveData() {
+      return {
+        format: DATA_FORMAT,
+        version: DATA_VERSION,
+        savedAt: new Date().toISOString(),
+        currentPlanId: currentPlan ? currentPlan.id : null,
+        plans: historyPlans
+      };
+    }
+
+    function setSaveStatus(text, isError = false) {
+      const el = document.getElementById('save-status');
+      if (!el) return;
+      el.textContent = text;
+      el.classList.toggle('text-red-700', isError);
+      el.classList.toggle('font-bold', isError);
+      el.classList.toggle('text-gray-500', !isError);
+    }
+
+    // 変更のたびに呼ぶ。保存できなかった場合は利用者に知らせる
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSaveData()));
+        const t = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+        setSaveStatus(`✓ この端末に保存しました（${t}）`);
+        return true;
+      } catch (e) {
+        setSaveStatus('⚠ この端末に保存できませんでした。「ファイルに書き出す」で控えを残してください。', true);
+        if (!storageWarned) {
+          storageWarned = true;
+          showToast('保存できませんでした。写真が多い場合は減らしてください', '⚠');
+        }
+        return false;
+      }
+    }
+
+    function touch(plan) {
+      if (plan) plan.updatedAt = new Date().toISOString();
+    }
+
+    // 変更を確定する共通処理：更新日時→保存→再描画
+    function commit(plan) {
+      touch(plan);
+      saveState();
+      renderAll();
+    }
+
+    function loadState() {
+      let raw = null;
+      try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
+      if (!raw) return null;
+      try {
+        const data = JSON.parse(raw);
+        return applyLoadedData(data, true);
+      } catch (e) {
+        setSaveStatus('⚠ 保存データを読み込めませんでした。', true);
+        return null;
+      }
+    }
+
+    // 読み込んだデータを画面の状態に反映する（replace=true なら置き換え、false なら統合）
+    function applyLoadedData(data, replace) {
+      if (!data || typeof data !== 'object' || !Array.isArray(data.plans)) throw new Error('形式が違います');
+      const plans = data.plans.map(normalizePlan).filter(Boolean);
+      if (replace) {
+        historyPlans = plans;
+        currentPlan = historyPlans.find(p => p.id === data.currentPlanId) || historyPlans[0] || null;
+        return { added: plans.length, replaced: 0 };
+      }
+      let added = 0, replaced = 0;
+      plans.forEach(p => {
+        const idx = historyPlans.findIndex(x => x.id === p.id);
+        if (idx >= 0) { historyPlans[idx] = p; replaced++; }
+        else { historyPlans.push(p); added++; }
+      });
+      historyPlans.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      if (currentPlan) currentPlan = findPlan(currentPlan.id) || historyPlans[0] || null;
+      else currentPlan = historyPlans[0] || null;
+      return { added, replaced };
+    }
+
+    function exportJSON() {
+      if (historyPlans.length === 0) {
+        showToast('書き出すプランがありません', 'ℹ️');
+        return;
+      }
+      const json = JSON.stringify(buildSaveData(), null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const d = new Date();
+      const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `旅のプラン-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      showToast(`プラン ${historyPlans.length} 件をファイルに書き出しました`);
+    }
+
+    function importJSON(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let data;
+        try {
+          data = JSON.parse(String(reader.result));
+          if (!data || !Array.isArray(data.plans)) throw new Error();
+        } catch (e) {
+          showToast('このファイルは読み込めませんでした（旅のプランのファイルを選んでください）', '⚠');
+          return;
+        }
+        const count = data.plans.length;
+        if (!confirm(`ファイルのプラン ${count} 件を、今の一覧に加えます。\n同じプランがすでにある場合は、ファイルの内容で置き換えます。よろしいですか？`)) return;
+        try {
+          const r = applyLoadedData(data, false);
+          saveState();
+          renderAll();
+          showToast(`読み込みました（追加 ${r.added} 件・置き換え ${r.replaced} 件）`);
+        } catch (e) {
+          showToast('読み込みに失敗しました', '⚠');
+        }
+      };
+      reader.onerror = () => showToast('ファイルを開けませんでした', '⚠');
+      reader.readAsText(file);
+    }
+
+    /* ====================================================================
        10. 画面操作の受け付け（data-action によるイベント委譲）
        ==================================================================== */
     function planIdFrom(el) {
@@ -1639,12 +1851,17 @@
         case 'copy-plan': copyPlanText(); break;
         case 'print': window.print(); break;
         case 'open-from-compare': closeCompareModal(); viewPlanDetail(planId); break;
+        case 'export-json': exportJSON(); break;
       }
     });
 
     document.addEventListener('change', e => {
       const el = e.target;
       if (el.dataset && el.dataset.action === 'toggle-compare') toggleCompareSelect(planIdFrom(el));
+      if (el.id === 'import-file') {
+        importJSON(el.files && el.files[0]);
+        el.value = ''; // 同じファイルをもう一度選べるようにする
+      }
     });
 
     document.addEventListener('keydown', e => {
@@ -1664,7 +1881,13 @@
       document.getElementById('sound-icon-on').classList.toggle('hidden', !isSoundOn);
       document.getElementById('sound-icon-off').classList.toggle('hidden', isSoundOn);
 
-      // 見比べをすぐ試せるよう、見本のプランを2件用意する
+      // 保存データがあればそれを使う（すべて消した後の「0件」もそのまま尊重する）
+      if (loadState()) {
+        renderAll();
+        return;
+      }
+
+      // 初めて開いたときだけ、見比べをすぐ試せるよう見本のプランを2件用意する
       const samples = [
         { hotelKey: 'fujiya', purpose: 'architecture', season: 'autumn', nights: '1night', companion: 'grand', pace: 'relaxed' },
         { hotelKey: 'nikko', purpose: 'nature', season: 'autumn', nights: '1night', companion: 'grand', pace: 'active' }
@@ -1675,6 +1898,7 @@
         return p;
       });
       currentPlan = historyPlans[0];
+      saveState();
       renderAll();
     });
   </script>
