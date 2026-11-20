@@ -109,7 +109,7 @@
             名門クラシックホテル <span class="text-classic-gold">悠久の旅路</span>
           </h1>
           <p class="text-xs sm:text-sm text-gray-300 font-serif">
-            世代をこえて語り合い、いっしょにつくるクラシックホテルの旅
+            名建築と土地の味を、ゆっくり楽しむ旅の計画
           </p>
         </div>
       </div>
@@ -157,11 +157,11 @@
           <span class="text-xs text-gray-600 font-serif">日光・箱根・軽井沢・奈良・横浜・東京・蒲郡・雲仙・川奈・伊勢志摩</span>
         </div>
         <h2 class="text-xl sm:text-2xl font-serif font-bold text-classic-navy">
-          思い出と調べものを持ち寄って、いっしょに旅をつくりましょう
+          歴史あるホテルで過ごす、ゆとりの旅を計画しましょう
         </h2>
         <p class="text-sm sm:text-base text-gray-700 leading-relaxed font-serif">
-          条件を選ぶと、旅程の「たたき台」ができます。そこへ年長の方の思い出や、若い方が調べたことを書き足して、自分たちだけの旅に仕上げてください。<br class="hidden sm:inline">
-          条件を変えて何度でも作り直せます。作ったプランは下に並び、見比べながら話し合えます。書き込んだ内容はこの端末に自動で保存され、ファイルに書き出して次回へ持ち越せます。
+          条件を選ぶと、旅程の「たたき台」ができます。予定を入れ替えたり、思い出や気づいたことを書き添えたりして、自分だけの旅に仕上げてください。<br class="hidden sm:inline">
+          条件を変えて何度でも作り直せます。作ったプランは下に並び、見比べて選べます。書き込んだ内容はこの端末に自動で保存され、ファイルに書き出して次回へ持ち越せます。
         </p>
       </div>
       <div class="flex-shrink-0 self-end md:self-center">
@@ -178,15 +178,6 @@
       <!-- 左側：条件選択フォーム（幅5カラム） -->
       <div class="lg:col-span-5 space-y-6 no-print">
 
-      <!-- いっしょに考える人（参加メンバー） -->
-      <section id="members-panel" class="bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
-        <div class="border-b border-classic-border pb-3 mb-4 flex items-center space-x-2">
-          <span class="w-3 h-6 bg-classic-gold rounded-sm"></span>
-          <h3 class="text-lg sm:text-xl font-serif font-bold text-classic-navy">いっしょに考える人</h3>
-        </div>
-        <p class="text-sm text-gray-600 mb-3">呼び名を入れておくと、だれの提案や思い出かがプランに残ります。新しく作るプランの「作った人」になります。</p>
-        <div id="members-editor"><!-- JSで描画 --></div>
-      </section>
 
       <section id="planner-form" class="bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
         <div class="border-b border-classic-border pb-3 mb-5 flex items-center justify-between">
@@ -315,12 +306,12 @@
               いっしょに行く人
             </label>
             <select id="companionSelect" class="w-full p-3 bg-[#FAF7F0] border-2 border-[#D8CBB6] rounded-xl text-sm font-medium text-gray-800 focus:ring-classic-gold">
-              <option value="grand" selected>祖父母と孫</option>
-              <option value="parent">親子</option>
-              <option value="three">三世代そろって</option>
-              <option value="couple">夫婦・パートナー</option>
-              <option value="friends">友人・仲間</option>
+              <option value="couple" selected>夫婦・パートナー</option>
               <option value="solo">ひとり旅</option>
+              <option value="friends">友人・仲間</option>
+              <option value="parent">子どもと</option>
+              <option value="grand">孫と</option>
+              <option value="three">三世代そろって</option>
               <option value="other">そのほか</option>
             </select>
           </div>
@@ -357,6 +348,16 @@
           </div>
 
         </form>
+      </section>
+
+      <!-- 旅の仲間（なくても使える） -->
+      <section id="members-panel" class="bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
+        <div class="border-b border-classic-border pb-3 mb-4 flex items-center space-x-2">
+          <span class="w-3 h-6 bg-classic-gold rounded-sm"></span>
+          <h3 class="text-lg sm:text-xl font-serif font-bold text-classic-navy">旅の仲間 <span class="text-sm font-normal text-gray-500">（なくても使えます）</span></h3>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">いっしょに行く人の名前を入れておくと、予定ごとに「だれの希望か」を残したり、見比べるときに一人ずつ行きたい度を付けたりできます。ひとり旅なら「わたし」だけで大丈夫です。</p>
+        <div id="members-editor"><!-- JSで描画 --></div>
       </section>
       </div>
 
@@ -467,7 +468,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-serif">
       <div class="flex items-center space-x-3">
         <span class="text-classic-gold font-bold">名門クラシックホテル 悠久の旅路プランナー</span>
-        <span class="text-xs text-gray-400">| 世代をこえて、いっしょにつくる旅</span>
+        <span class="text-xs text-gray-400">| ゆとりを持って、歴史と味を楽しむ旅</span>
       </div>
       <p class="text-xs text-gray-400 text-center md:text-right">
         ※本アプリの旅程・歴史・名物案内は日本国内の代表的クラシックホテル（日本クラシックホテルの会加盟ホテル等）の公知情報をもとにした旅行提案の試作ツールです。営業内容や料金は変わることがあるため、お出かけ前に各ホテルの公式情報をご確認ください。
@@ -943,8 +944,8 @@
       season: { spring: '🌸 春', summer: '☀️ 夏', autumn: '🍁 秋', winter: '❄️ 冬' },
       seasonTitle: { spring: '桜の春', summer: '涼やかな夏', autumn: '紅葉の秋', winter: '澄んだ冬' },
       nights: { daytrip: '日帰り', '1night': '一泊二日', '2nights': '二泊三日' },
-      companion: { grand: '祖父母と孫', parent: '親子', three: '三世代', couple: '夫婦・パートナー', friends: '友人・仲間', solo: 'ひとり旅', other: 'そのほか' },
-      companionTitle: { grand: '祖父母と孫でめぐる', parent: '親子でめぐる', three: '三世代でめぐる', couple: 'ふたりでめぐる', friends: '仲間とめぐる', solo: 'ひとりで味わう', other: 'みんなでめぐる' },
+      companion: { grand: '孫と', parent: '子どもと', three: '三世代', couple: '夫婦・パートナー', friends: '友人・仲間', solo: 'ひとり旅', other: 'そのほか' },
+      companionTitle: { grand: '孫とめぐる', parent: '子どもとめぐる', three: '三世代でめぐる', couple: 'ふたりでめぐる', friends: '仲間とめぐる', solo: 'ひとりで味わう', other: 'みんなでめぐる' },
       pace: { relaxed: 'ゆったり', active: 'しっかり巡る' }
     };
 
@@ -1196,7 +1197,7 @@
         title,
         days: built.days,
         skipped: built.skipped,
-        // 「いっしょに考える人」をこのプランの「作った人」として写し取る（IDは共通）
+        // 「旅の仲間」をこのプランに写し取る（IDは共通）
         makers: members.map(m => ({ ...m })),
         comments: [],
         evaluations: {},  // { メンバーID: { want: 0〜5, good: "良いと思った点" } }
@@ -1230,74 +1231,82 @@
     }
 
     /* ====================================================================
-       5. 参加メンバーと「提案した人」
+       5. 旅の仲間と「だれの希望か」
        ==================================================================== */
-    let members = [];            // いっしょに考える人（新しいプランの「作った人」になる）
+    let members = [];            // 旅の仲間（新しいプランの「旅の仲間」になる）
     let editingStepId = null;    // 編集中の行程ID（新規追加は "new:日番号"）
     let editingTitle = false;
     let editingMakers = false;
 
-    const GEN = {
-      elder: { label: '年長の方', badge: 'bg-[#F6E7EA] text-[#5B1E2B] border-[#E3BCC4]', bubble: 'bg-[#FBF1F3] border-[#C98D99]' },
-      young: { label: '若い方',   badge: 'bg-[#E6EEF6] text-[#1B3B6F] border-[#B5C8DE]', bubble: 'bg-[#F0F5FA] border-[#7F9CC0]' },
-      other: { label: 'そのほか', badge: 'bg-[#EEF3EC] text-[#2C5E43] border-[#BCD3C3]', bubble: 'bg-[#F3F7F1] border-[#8FB39A]' },
-      both:  { label: 'みんなで', badge: 'bg-[#FAF1DD] text-[#7A5A12] border-[#E5CE94]', bubble: 'bg-[#FDF8EC] border-[#D9B862]' },
-      tool:  { label: 'たたき台', badge: 'bg-gray-100 text-gray-600 border-gray-300', bubble: 'bg-gray-50 border-gray-300' }
+    // 人ごとの色（並び順で決まる。世代や性別とは関係ない）。色だけに頼らず名前も必ず表示する
+    const PERSON_TONES = [
+      { badge: 'bg-[#F6E7EA] text-[#5B1E2B] border-[#E3BCC4]', bubble: 'bg-[#FBF1F3] border-[#C98D99]' },
+      { badge: 'bg-[#E6EEF6] text-[#1B3B6F] border-[#B5C8DE]', bubble: 'bg-[#F0F5FA] border-[#7F9CC0]' },
+      { badge: 'bg-[#EEF3EC] text-[#2C5E43] border-[#BCD3C3]', bubble: 'bg-[#F3F7F1] border-[#8FB39A]' },
+      { badge: 'bg-[#F3ECF6] text-[#5A2D6E] border-[#D6C0E0]', bubble: 'bg-[#F8F3FA] border-[#A98BBA]' },
+      { badge: 'bg-[#FBEEE4] text-[#7A3B12] border-[#E9C6AA]', bubble: 'bg-[#FDF5EF] border-[#D39A6E]' },
+      { badge: 'bg-[#E8F4F4] text-[#1F5656] border-[#B5D8D8]', bubble: 'bg-[#F1F8F8] border-[#7FB5B5]' }
+    ];
+    const FIXED_TONES = {
+      both: { badge: 'bg-[#FAF1DD] text-[#7A5A12] border-[#E5CE94]', bubble: 'bg-[#FDF8EC] border-[#D9B862]' },
+      tool: { badge: 'bg-gray-100 text-gray-600 border-gray-300', bubble: 'bg-gray-50 border-gray-300' }
     };
 
-    function makeMember(gen = 'elder', name = '') {
-      return { id: newId('m'), name, gen };
+    function makeMember(name = '') {
+      return { id: newId('m'), name };
     }
     function defaultMembers() {
-      return [makeMember('elder'), makeMember('young')];
+      return [makeMember('わたし')];
     }
-    function memberName(m) {
-      return (m && m.name) ? m.name : (m ? GEN[m.gen].label : '');
+    function memberName(m, index = 0) {
+      return (m && m.name) ? m.name : `${index + 1}人目`;
     }
-    function memberLabel(m) {
-      return m.name ? `${m.name}（${GEN[m.gen].label}）` : GEN[m.gen].label;
+    function memberTone(list, m) {
+      const i = Math.max(0, list.findIndex(x => x.id === m.id));
+      return PERSON_TONES[i % PERSON_TONES.length];
     }
 
-    // by の値（'tool' | 'both' | 'elder' | 'young' | 'm:<id>'）から表示名と世代を求める
+    // by の値（'tool' | 'both' | 'm:<id>'）から表示名と色を求める
     function whoInfo(plan, by) {
+      const makers = plan.makers || [];
       if (typeof by === 'string' && by.startsWith('m:')) {
-        const m = (plan.makers || []).find(x => x.id === by.slice(2));
-        if (m) return { name: memberName(m), gen: m.gen, full: memberLabel(m) };
-        return { name: '（以前のメンバー）', gen: 'other', full: '（以前のメンバー）' };
+        const i = makers.findIndex(x => x.id === by.slice(2));
+        if (i >= 0) return { kind: 'person', key: by, name: memberName(makers[i], i), tone: PERSON_TONES[i % PERSON_TONES.length] };
+        return { kind: 'person', key: by, name: '（以前の仲間）', tone: FIXED_TONES.tool };
       }
-      const key = GEN[by] ? by : 'tool';
-      return { name: GEN[key].label, gen: key, full: GEN[key].label };
+      if (by === 'tool') return { kind: 'tool', key: 'tool', name: 'たたき台', tone: FIXED_TONES.tool };
+      return { kind: 'both', key: 'both', name: 'みんなで', tone: FIXED_TONES.both };
     }
     function whoBadge(plan, by) {
       const w = whoInfo(plan, by);
-      return `<span class="inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${GEN[w.gen].badge}">${w.gen === 'tool' ? '🧭 ' : '🙋 '}${esc(w.name)}</span>`;
+      return `<span class="inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${w.tone.badge}">${w.kind === 'tool' ? '🧭 ' : '🙋 '}${esc(w.name)}</span>`;
     }
     function whoOptions(plan, selected, { includeTool = true } = {}) {
-      const opts = [];
-      (plan.makers || []).forEach(m => opts.push([`m:${m.id}`, memberLabel(m)]));
-      if (!(plan.makers || []).some(m => m.gen === 'elder')) opts.push(['elder', '年長の方']);
-      if (!(plan.makers || []).some(m => m.gen === 'young')) opts.push(['young', '若い方']);
-      opts.push(['both', 'みんなで']);
+      const makers = plan.makers || [];
+      const opts = makers.map((m, i) => [`m:${m.id}`, memberName(m, i)]);
+      if (makers.length !== 1) opts.push(['both', 'みんなで']);
       if (includeTool) opts.push(['tool', 'たたき台（ツールの提案）']);
       return opts.map(([v, l]) => `<option value="${esc(v)}" ${v === selected ? 'selected' : ''}>${esc(l)}</option>`).join('');
     }
+    // 書く人の初期値（最初の仲間。いなければ「みんなで」）
+    function defaultWho(plan) {
+      return plan.makers[0] ? `m:${plan.makers[0].id}` : 'both';
+    }
 
-    // メンバー編集欄（scope: 'global' = いっしょに考える人 / 'plan' = このプランを作った人）
+    // 旅の仲間の編集欄（scope: 'global' = 新しく作るプラン用 / 'plan' = このプランの旅の仲間）
     function renderMemberEditor(list, scope) {
-      const rows = list.map(m => `
-        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2" data-member-id="${esc(m.id)}" data-scope="${scope}">
-          <input type="text" data-member-field="name" value="${esc(m.name)}" maxlength="30" aria-label="呼び名"
-            placeholder="${m.gen === 'young' ? '例：けんたさん' : m.gen === 'elder' ? '例：はなこさん' : '呼び名'}"
-            class="flex-1 min-w-[8rem] p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
-          <select data-member-field="gen" aria-label="世代" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">
-            ${['elder', 'young', 'other'].map(g => `<option value="${g}" ${m.gen === g ? 'selected' : ''}>${GEN[g].label}</option>`).join('')}
-          </select>
+      const rows = list.map((m, i) => `
+        <div class="flex items-center gap-2" data-member-id="${esc(m.id)}" data-scope="${scope}">
+          <span class="inline-block w-3 h-3 rounded-full border ${PERSON_TONES[i % PERSON_TONES.length].badge}" aria-hidden="true"></span>
+          <input type="text" data-member-field="name" value="${esc(m.name)}" maxlength="30" aria-label="${i + 1}人目の呼び名"
+            placeholder="${i === 0 ? '例：わたし' : '例：友人の田中さん'}"
+            class="flex-1 min-w-0 p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
           <button type="button" data-action="member-remove" aria-label="この人を外す" title="この人を外す" class="px-2 py-1.5 text-gray-400 hover:text-red-700 text-lg leading-none">×</button>
         </div>`).join('');
       return `
         <div class="space-y-2">
           ${rows || '<p class="text-sm text-gray-500">まだだれもいません。</p>'}
-          <button type="button" data-action="member-add" data-scope="${scope}" class="mt-1 px-3 py-1.5 text-sm border border-dashed border-classic-gold text-classic-goldHover rounded-lg hover:bg-[#FAF4E8]">＋ 人を加える</button>
+          <button type="button" data-action="member-add" data-scope="${scope}" class="mt-1 px-3 py-1.5 text-sm border border-dashed border-classic-gold text-classic-goldHover rounded-lg hover:bg-[#FAF4E8]">＋ いっしょに行く人を加える</button>
         </div>`;
     }
 
@@ -1310,7 +1319,7 @@
     }
 
     /* ====================================================================
-       6. プラン詳細の描画（たたき台を、ふたりで直していく画面）
+       6. プラン詳細の描画（たたき台を、自分の旅に書き直していく画面）
        ==================================================================== */
     function sectionTitle(text, color = 'bg-classic-gold') {
       return `
@@ -1346,7 +1355,7 @@
               <label class="text-xs text-gray-600">予定<input type="text" name="action" value="${esc(s.action)}" maxlength="200" placeholder="例：駅前の喫茶店でひと休み" class="${field}"></label>
             </div>
             <label class="block text-xs text-gray-600">くわしく<textarea name="detail" rows="2" maxlength="1000" class="${field}">${esc(s.detail)}</textarea></label>
-            <label class="block text-xs text-gray-600">提案した人<select name="by" class="${field}">${whoOptions(plan, s.by)}</select></label>
+            <label class="block text-xs text-gray-600">だれの希望か<select name="by" class="${field}">${whoOptions(plan, s.by)}</select></label>
             <label class="block text-xs text-gray-600">ひとこと（思い出・おすすめの理由・調べたこと）
               <textarea name="note" rows="2" maxlength="1000" placeholder="例：50年前に新婚旅行で泊まった。ロビーの階段で写真を撮った／調べたら今も同じ場所で営業している" class="${field}">${esc(s.note)}</textarea>
             </label>
@@ -1363,7 +1372,7 @@
       const dot = dayIndex === 0 ? 'border-classic-burgundy' : 'border-classic-gold';
       const noteWho = whoInfo(plan, step.by);
       const note = step.note ? `
-          <div class="mt-1.5 text-sm border-l-4 rounded-r-lg px-3 py-1.5 ${GEN[noteWho.gen].bubble}">
+          <div class="mt-1.5 text-sm border-l-4 rounded-r-lg px-3 py-1.5 ${noteWho.tone.bubble}">
             💬 <span class="font-bold">${esc(noteWho.name)}のひとこと</span>：${esc(step.note)}
           </div>` : '';
       if (step.kind === 'rest') {
@@ -1425,32 +1434,32 @@
         </details>`;
     }
 
-    // このプランを作った人
+    // このプランの旅の仲間
     function renderMakers(plan) {
       if (editingMakers) {
         return `
           <div class="bg-[#FAF7F0] border-2 border-classic-gold rounded-xl p-4 mb-6 no-print">
-            <p class="text-sm font-bold text-classic-navy mb-2">このプランを作った人</p>
+            <p class="text-sm font-bold text-classic-navy mb-2">このプランの旅の仲間</p>
             ${renderMemberEditor(plan.makers, 'plan')}
             <button type="button" data-action="makers-done" class="mt-3 px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold">できた</button>
           </div>`;
       }
       const chips = plan.makers.length
-        ? plan.makers.map(m => `<span class="inline-block text-sm font-bold px-2.5 py-0.5 rounded-full border ${GEN[m.gen].badge}">${esc(memberLabel(m))}</span>`).join(' ')
+        ? plan.makers.map((m, i) => `<span class="inline-block text-sm font-bold px-2.5 py-0.5 rounded-full border ${memberTone(plan.makers, m).badge}">${esc(memberName(m, i))}</span>`).join(' ')
         : '<span class="text-sm text-gray-500">まだ登録されていません</span>';
       return `
         <div class="flex flex-wrap items-center gap-2 mb-6">
-          <span class="text-sm text-gray-600 font-bold">作った人：</span>${chips}
+          <span class="text-sm text-gray-600 font-bold">旅の仲間：</span>${chips}
           <button type="button" data-action="makers-edit" class="${smallBtn} no-print">変更</button>
         </div>`;
     }
 
-    // ふたりのひとこと（プラン全体への書き込み）
+    // ひとことメモ（プラン全体への書き込み）
     function renderComments(plan) {
       const list = plan.comments.map(c => {
         const w = whoInfo(plan, c.by);
         return `
-          <li class="border-l-4 rounded-r-lg px-3 py-2 ${GEN[w.gen].bubble} avoid-break" data-comment-id="${esc(c.id)}">
+          <li class="border-l-4 rounded-r-lg px-3 py-2 ${w.tone.bubble} avoid-break" data-comment-id="${esc(c.id)}">
             <div class="flex items-center justify-between gap-2">
               <span class="text-sm font-bold text-gray-800">${esc(w.full)}</span>
               <span class="flex items-center gap-2">
@@ -1463,13 +1472,13 @@
       }).join('');
       return `
         <div class="mb-8">
-          ${sectionTitle('ふたりのひとこと', 'bg-classic-burgundy')}
-          <p class="text-sm text-gray-600 mb-3 no-print">このプランについて、思い出したこと・楽しみなこと・気になることを、それぞれ書きこみましょう。</p>
+          ${sectionTitle('ひとことメモ', 'bg-classic-burgundy')}
+          <p class="text-sm text-gray-600 mb-3 no-print">このプランについて、思い出したこと・楽しみなこと・気になることを書いておけます。</p>
           ${list ? `<ul class="space-y-2 mb-4">${list}</ul>` : '<p class="text-sm text-gray-500 mb-4">まだ書き込みはありません。</p>'}
           <div class="no-print bg-[#FAF7F0] border border-classic-border rounded-xl p-3 space-y-2" data-comment-form>
             <div class="flex flex-wrap items-center gap-2">
               <label for="comment-by" class="text-sm font-bold text-gray-700">書く人</label>
-              <select id="comment-by" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">${whoOptions(plan, plan.makers[0] ? `m:${plan.makers[0].id}` : 'elder', { includeTool: false })}</select>
+              <select id="comment-by" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">${whoOptions(plan, defaultWho(plan), { includeTool: false })}</select>
             </div>
             <textarea id="comment-text" rows="2" maxlength="1000" aria-label="ひとこと" placeholder="例：このホテルのカレーは、昔父がよく話していた味です" class="w-full p-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-classic-gold"></textarea>
             <button type="button" data-action="comment-add" class="px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold hover:bg-[#722736]">書きこむ</button>
@@ -1486,7 +1495,7 @@
           <figure class="bg-white border border-gray-200 rounded-xl p-2 shadow-sm avoid-break" data-photo-id="${esc(ph.id)}">
             <img src="${esc(ph.dataUrl)}" alt="${esc(ph.caption || '思い出の写真')}" class="w-full h-44 object-cover rounded-lg bg-gray-100">
             <figcaption class="mt-1.5 space-y-1">
-              <span class="inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${GEN[w.gen].badge}">${esc(w.name)}</span>
+              <span class="inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${w.tone.badge}">${esc(w.name)}</span>
               <p class="print-only text-sm text-gray-800">${esc(ph.caption)}</p>
               <input type="text" data-photo-caption value="${esc(ph.caption)}" maxlength="200" aria-label="写真のひとこと" placeholder="いつ・どこで・だれと？"
                 class="no-print w-full p-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
@@ -1502,7 +1511,7 @@
           ${plan.photos.length < MAX_PHOTOS ? `
           <div class="no-print flex flex-wrap items-center gap-2 bg-[#FAF7F0] border border-classic-border rounded-xl p-3">
             <label for="photo-by" class="text-sm font-bold text-gray-700">だれの写真</label>
-            <select id="photo-by" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">${whoOptions(plan, plan.makers[0] ? `m:${plan.makers[0].id}` : 'elder', { includeTool: false })}</select>
+            <select id="photo-by" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">${whoOptions(plan, defaultWho(plan), { includeTool: false })}</select>
             <label class="px-4 py-2 bg-classic-burgundy hover:bg-[#722736] text-white rounded-lg text-sm font-bold cursor-pointer focus-within:ring-2 focus-within:ring-classic-gold">
               📷 写真を選ぶ
               <input type="file" id="photo-file" accept="image/*" multiple class="sr-only">
@@ -1583,13 +1592,21 @@
       captionTimer = setTimeout(saveState, 400);
     }
 
+    // だれの希望かごとの件数（[{ name, count }]、仲間→みんなで→たたき台の順）
     function voiceCounts(plan) {
-      const c = { elder: 0, young: 0, other: 0, both: 0, tool: 0 };
+      const counts = new Map();
       plan.days.forEach(d => d.steps.forEach(s => {
         if (s.kind === 'rest') return;
-        c[whoInfo(plan, s.by).gen]++;
+        const w = whoInfo(plan, s.by);
+        const entry = counts.get(w.key) || { name: w.name, kind: w.kind, count: 0 };
+        entry.count++;
+        counts.set(w.key, entry);
       }));
-      return c;
+      const order = { person: 0, both: 1, tool: 2 };
+      return [...counts.values()].sort((a, b) => order[a.kind] - order[b.kind]);
+    }
+    function voiceText(plan, sep = '・') {
+      return voiceCounts(plan).map(v => `${esc(v.name)} ${v.count}件`).join(sep) || 'なし';
     }
 
     function renderCurrentPlan(plan) {
@@ -1605,7 +1622,6 @@
       const paceNote = plan.pace === 'relaxed'
         ? 'ゆったりペース：遠出は1日1か所にしぼり、休憩をはさんでいます。'
         : 'しっかり巡るペース：近くの名所も多めに入れています。';
-      const vc = voiceCounts(plan);
       const titleBlock = editingTitle ? `
           <div class="no-print flex flex-col sm:flex-row gap-2 mt-1" data-title-form>
             <input type="text" id="title-input" value="${esc(plan.title)}" maxlength="200" aria-label="プランの名前" class="flex-1 p-2 text-lg font-serif border-2 border-classic-gold rounded-lg">
@@ -1645,10 +1661,10 @@
 
         <!-- 旅程 -->
         <div class="mb-8">
-          ${sectionTitle('旅程（たたき台を、ふたりで直していきましょう）', 'bg-classic-burgundy')}
+          ${sectionTitle('旅程（自由に書き直せます）', 'bg-classic-burgundy')}
           <p class="text-sm text-gray-600 mb-1">${esc(paceNote)}</p>
           <p class="text-sm text-gray-600 mb-3">
-            提案した人：${['elder', 'young', 'other', 'both', 'tool'].filter(g => vc[g]).map(g => `${esc(GEN[g].label)} ${vc[g]}件`).join('・') || 'なし'}
+            だれの希望か：${voiceText(plan)}
           </p>
           <div class="space-y-5">${renderDays(plan)}</div>
           ${renderSkipped(plan)}
@@ -1731,7 +1747,6 @@
         const isCurrent = currentPlan && currentPlan.id === plan.id;
         const h = getHotel(plan);
         const chip = text => `<span class="bg-[#FAF7F0] px-2 py-0.5 rounded border border-gray-200">${esc(text)}</span>`;
-        const vc = voiceCounts(plan);
         const notes = plan.days.reduce((n, d) => n + d.steps.filter(s => s.note).length, 0);
         const last = plan.comments[plan.comments.length - 1];
         return `
@@ -1745,9 +1760,9 @@
               <div class="flex flex-wrap gap-1.5 text-xs text-gray-700 mb-2">
                 ${chip(LABELS.season[plan.season])}${chip(LABELS.nights[plan.nights])}${chip(LABELS.companion[plan.companion])}${chip(LABELS.pace[plan.pace])}
               </div>
-              ${plan.makers.length ? `<p class="text-sm text-gray-700 mb-1">作った人：${plan.makers.map(m => esc(memberName(m))).join('・')}</p>` : ''}
-              <p class="text-xs text-gray-600 mb-2">提案 年長 ${vc.elder}・若い ${vc.young}・みんな ${vc.both}　💬 ひとこと ${notes + plan.comments.length}件</p>
-              ${(() => { const a = avgWant(plan, null, comparePeople([plan])); return a !== null ? `<p class="text-sm text-gray-700 mb-2">行きたい度 ${starText(a)}</p>` : ''; })()}
+              ${plan.makers.length ? `<p class="text-sm text-gray-700 mb-1">旅の仲間：${plan.makers.map(m => esc(memberName(m))).join('・')}</p>` : ''}
+              <p class="text-xs text-gray-600 mb-2">希望：${voiceText(plan)}　💬 ひとこと ${notes + plan.comments.length}件</p>
+              ${(() => { const a = avgWant(plan, comparePeople([plan])); return a !== null ? `<p class="text-sm text-gray-700 mb-2">行きたい度 ${starText(a)}</p>` : ''; })()}
               ${last ? `<div class="text-sm bg-yellow-50 text-gray-700 p-2 rounded border border-yellow-200 mb-2 line-clamp-2"><strong>${esc(whoInfo(plan, last.by).name)}：</strong>${esc(last.text)}</div>` : ''}
             </div>
             <div class="pt-3 border-t border-gray-100 flex items-center justify-between mt-2">
@@ -1961,8 +1976,7 @@
       const list = memberList(scope);
       if (!list) return;
       if (list.length >= 8) { showToast('8人までです', '⚠'); return; }
-      const hasYoung = list.some(m => m.gen === 'young');
-      list.push(makeMember(list.length === 0 ? 'elder' : (hasYoung ? 'elder' : 'young')));
+      list.push(makeMember());
       saveState();
       if (scope === 'global') renderMembersPanel(); else renderCurrentPlan(currentPlan);
       const rows = document.querySelectorAll(`[data-scope="${scope}"][data-member-id] input`);
@@ -1986,11 +2000,10 @@
       const m = list && list.find(x => x.id === row.dataset.memberId);
       if (!m) return;
       if (el.dataset.memberField === 'name') m.name = str(el.value, 30);
-      if (el.dataset.memberField === 'gen') m.gen = oneOf(el.value, ['elder', 'young', 'other'], 'other');
       scheduleMemberSave();
     }
 
-    // --- ふたりのひとこと ---
+    // --- ひとことメモ ---
     function addComment() {
       const plan = currentPlan;
       const textEl = document.getElementById('comment-text');
@@ -2035,18 +2048,18 @@
       playChime('bell');
     }
 
-    // 見比べに参加する人：見比べる各プランの「作った人」と「いっしょに考える人」を合わせたもの（IDで重複を除く）
+    // 見比べで評価する人：「旅の仲間」と、見比べる各プランの旅の仲間を合わせたもの（IDで重複を除く）
     function comparePeople(plans) {
       const seen = new Map();
       [...members, ...plans.flatMap(p => p.makers)].forEach(m => { if (!seen.has(m.id)) seen.set(m.id, m); });
       return [...seen.values()];
     }
 
-    function avgWant(plan, gen, people) {
-      const vals = people
-        .filter(m => !gen || m.gen === gen)
-        .map(m => (plan.evaluations[m.id] || {}).want || 0)
-        .filter(v => v > 0);
+    function wantValues(plan, people) {
+      return people.map(m => (plan.evaluations[m.id] || {}).want || 0).filter(v => v > 0);
+    }
+    function avgWant(plan, people) {
+      const vals = wantValues(plan, people);
       return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
     }
 
@@ -2057,19 +2070,20 @@
     }
 
     function renderRatingRows(plans, people) {
+      const cols = plans.length + 1;
       if (!people.length) {
-        return `<tr><td colspan="${plans.length + 1}" class="p-3 border border-gray-300 text-sm text-gray-600">「いっしょに考える人」を登録すると、ここで一人ずつ評価できます。</td></tr>`;
+        return `<tr><td colspan="${cols}" class="p-3 border border-gray-300 text-sm text-gray-600">左上の「旅の仲間」に名前を入れると、ここで行きたい度を記録できます。</td></tr>`;
       }
-      const personRows = people.map(m => `
+      const personRows = people.map((m, i) => `
         <tr>
           <th scope="row" class="p-3 border border-gray-300 text-left align-top bg-white">
-            <span class="inline-block text-sm font-bold px-2.5 py-1 rounded-lg border ${GEN[m.gen].badge} leading-snug">${esc(memberName(m))}<br><span class="text-xs font-normal">${esc(GEN[m.gen].label)}</span></span>
+            <span class="inline-block text-sm font-bold px-2.5 py-1 rounded-lg border ${memberTone(people, m).badge} leading-snug">${esc(memberName(m, i))}</span>
           </th>
           ${plans.map(p => {
             const ev = p.evaluations[m.id] || { want: 0, good: '' };
             return `
               <td class="p-3 border border-gray-300 align-top" data-plan-id="${esc(p.id)}" data-member-id="${esc(m.id)}">
-                <div class="flex items-center gap-0.5 mb-1.5" role="group" aria-label="${esc(memberName(m))}の行きたい度">
+                <div class="flex items-center gap-0.5 mb-1.5" role="group" aria-label="${esc(memberName(m, i))}の行きたい度">
                   <span class="text-xs text-gray-600 mr-1">行きたい度</span>
                   ${[1, 2, 3, 4, 5].map(v => `
                     <button type="button" data-action="rate" data-value="${v}" aria-label="${v}つ星" aria-pressed="${ev.want === v}"
@@ -2083,27 +2097,26 @@
           }).join('')}
         </tr>`).join('');
 
-      const genRow = `
+      // 2人以上のときだけ、平均と「意見が分かれている」目印を出す
+      const avgRow = people.length < 2 ? '' : `
         <tr class="bg-[#FAF7F0]">
-          <th scope="row" class="p-3 border border-gray-300 text-left align-top font-bold text-classic-navy">世代ごとの<br>行きたい度</th>
+          <th scope="row" class="p-3 border border-gray-300 text-left align-top font-bold text-classic-navy">みんなの<br>行きたい度</th>
           ${plans.map(p => {
-            const e = avgWant(p, 'elder', people), y = avgWant(p, 'young', people), all = avgWant(p, null, people);
-            const split = e !== null && y !== null && Math.abs(e - y) >= 2;
+            const vals = wantValues(p, people);
+            const split = vals.length >= 2 && Math.max(...vals) - Math.min(...vals) >= 2;
             return `
               <td class="p-3 border border-gray-300 align-top text-sm">
-                <div><span class="inline-block w-20 font-bold text-[#5B1E2B]">年長の方</span>${starText(e)}</div>
-                <div><span class="inline-block w-20 font-bold text-[#1B3B6F]">若い方</span>${starText(y)}</div>
-                <div class="mt-1 pt-1 border-t border-gray-200"><span class="inline-block w-20 font-bold">みんな</span>${starText(all)}</div>
-                ${split ? '<p class="mt-1.5 text-xs font-bold text-classic-burgundy">💬 世代で評価が分かれています。理由を聞き合ってみましょう</p>' : ''}
+                <div>平均 ${starText(avgWant(p, people))}</div>
+                ${split ? '<p class="mt-1.5 text-xs font-bold text-classic-burgundy">💬 意見が分かれています。お互いの理由を聞いてみましょう</p>' : ''}
               </td>`;
           }).join('')}
         </tr>`;
 
       return `
-        <tr><th colspan="${plans.length + 1}" class="p-2 border border-gray-300 bg-classic-navy text-white text-left font-serif">みんなの評価（一人ずつ入れてください）</th></tr>
+        <tr><th colspan="${cols}" class="p-2 border border-gray-300 bg-classic-navy text-white text-left font-serif">行きたい度${people.length >= 2 ? '（一人ずつ）' : ''}</th></tr>
         ${personRows}
-        ${genRow}
-        <tr><th colspan="${plans.length + 1}" class="p-2 border border-gray-300 bg-classic-navy text-white text-left font-serif">プランの中身</th></tr>`;
+        ${avgRow}
+        <tr><th colspan="${cols}" class="p-2 border border-gray-300 bg-classic-navy text-white text-left font-serif">プランの中身</th></tr>`;
     }
 
     function rate(planId, memberId, value) {
@@ -2172,15 +2185,14 @@
                   <ul class="list-disc list-inside space-y-0.5 text-gray-700">
                     ${d.steps.filter(s => s.kind !== 'rest').map(s => {
                       const w = whoInfo(p, s.by);
-                      return `<li>${esc(s.time)} ${esc(s.action)}${w.gen !== 'tool' ? ` <span class="text-xs font-bold px-1.5 rounded border ${GEN[w.gen].badge}">${esc(w.name)}</span>` : ''}</li>`;
+                      return `<li>${esc(s.time)} ${esc(s.action)}${w.kind !== 'tool' ? ` <span class="text-xs font-bold px-1.5 rounded border ${w.tone.badge}">${esc(w.name)}</span>` : ''}</li>`;
                     }).join('')}
                   </ul>
                 </div>`).join(''))}
               ${row('お土産', (p, h) => h.souvenirs.map(s => `<div class="mb-1">・${esc(s.name)}</div>`).join(''))}
-              ${row('作った人', p => p.makers.length ? p.makers.map(m => `<span class="inline-block text-xs font-bold px-2 py-0.5 mr-1 mb-1 rounded-full border ${GEN[m.gen].badge}">${esc(memberLabel(m))}</span>`).join('') : '<span class="text-gray-400">—</span>')}
-              ${row('だれの提案か', p => {
-                const vc = voiceCounts(p);
-                return ['elder', 'young', 'other', 'both', 'tool'].filter(g => vc[g]).map(g => `${esc(GEN[g].label)} ${vc[g]}件`).join('<br>');
+              ${row('旅の仲間', p => p.makers.length ? p.makers.map((m, i) => `<span class="inline-block text-xs font-bold px-2 py-0.5 mr-1 mb-1 rounded-full border ${memberTone(p.makers, m).badge}">${esc(memberName(m, i))}</span>`).join('') : '<span class="text-gray-400">—</span>')}
+              ${row('だれの希望か', p => {
+                return voiceText(p, '<br>');
               })}
               ${row('ひとこと', p => {
                 const notes = [];
@@ -2189,7 +2201,7 @@
                 if (!notes.length) return '<span class="text-gray-400">—</span>';
                 return notes.slice(0, 6).map(n => {
                   const w = whoInfo(p, n.by);
-                  return `<div class="mb-1.5 border-l-4 pl-2 ${GEN[w.gen].bubble}"><strong class="text-xs">${esc(w.name)}</strong><br>${esc(n.text)}</div>`;
+                  return `<div class="mb-1.5 border-l-4 pl-2 ${w.tone.bubble}"><strong class="text-xs">${esc(w.name)}</strong><br>${esc(n.text)}</div>`;
                 }).join('') + (notes.length > 6 ? `<span class="text-xs text-gray-500">ほか ${notes.length - 6} 件</span>` : '');
               })}
               <tr class="bg-gray-50">
@@ -2222,12 +2234,12 @@
       let text = `【旅程】${plan.title}\n`;
       text += `宿泊先：${h.name}（${h.location}）\n`;
       text += `条件：${LABELS.season[plan.season]}／${LABELS.nights[plan.nights]}／${LABELS.companion[plan.companion]}／${LABELS.pace[plan.pace]}\n`;
-      if (plan.makers.length) text += `作った人：${plan.makers.map(memberLabel).join('、')}\n`;
+      if (plan.makers.length) text += `旅の仲間：${plan.makers.map((m, i) => memberName(m, i)).join('、')}\n`;
       plan.days.forEach(d => {
         text += `\n■ ${d.label}（${d.theme}）\n`;
         d.steps.forEach(s => {
           const w = whoInfo(plan, s.by);
-          text += `・${s.time} ${s.action}${w.gen !== 'tool' ? `［提案：${w.name}］` : ''}${s.detail ? ' - ' + s.detail : ''}\n`;
+          text += `・${s.time} ${s.action}${w.kind !== 'tool' ? `［希望：${w.name}］` : ''}${s.detail ? ' - ' + s.detail : ''}\n`;
           if (s.note) text += `　💬 ${w.name}：${s.note}\n`;
         });
       });
@@ -2242,11 +2254,11 @@
         text += `\n■ みんなの評価\n`;
         raters.forEach(m => {
           const ev = plan.evaluations[m.id];
-          text += `・${memberLabel(m)}：行きたい度 ${ev.want ? '★'.repeat(ev.want) : '－'}${ev.good ? '／良い点：' + ev.good : ''}\n`;
+          text += `・${memberName(m, plan.makers.findIndex(x => x.id === m.id))}：行きたい度 ${ev.want ? '★'.repeat(ev.want) : '－'}${ev.good ? '／良い点：' + ev.good : ''}\n`;
         });
       }
       if (plan.comments.length) {
-        text += `\n■ ふたりのひとこと\n`;
+        text += `\n■ ひとことメモ\n`;
         plan.comments.forEach(c => { text += `・${whoInfo(plan, c.by).full}：${c.text}\n`; });
       }
       return text;
@@ -2358,7 +2370,7 @@
           id: safeId(ph.id, 'ph'), dataUrl: ph.dataUrl, caption: str(ph.caption, 200), by: str(ph.by, 90) || 'both', at: isoOr(ph.at, now)
         })) : []
       };
-      // 旧版のメモ欄は「ふたりのひとこと」の1件目として引き継ぐ
+      // 旧版のメモ欄は「ひとことメモ」の1件目として引き継ぐ
       const oldMemo = str(raw.memo, 1000).trim();
       if (oldMemo && plan.comments.length === 0) {
         plan.comments.push({ id: newId('c'), by: 'both', text: oldMemo, at: plan.updatedAt });
@@ -2381,8 +2393,7 @@
       if (!Array.isArray(list)) return [];
       return list.slice(0, 8).map(m => ({
         id: safeId(m && m.id, 'm'),
-        name: str(m && m.name, 30),
-        gen: oneOf(m && m.gen, ['elder', 'young', 'other'], 'other')
+        name: str(m && m.name, 30)
       }));
     }
 
@@ -2548,7 +2559,7 @@
         case 'step-down': moveStep(stepId, 1); break;
         case 'step-delete': deleteStep(stepId); break;
         case 'skip-restore': restoreSkipped(el.closest('[data-skip-id]').dataset.skipId); break;
-        // タイトル・作った人
+        // タイトル・旅の仲間
         case 'title-edit': editingTitle = true; renderCurrentPlan(currentPlan); document.getElementById('title-input').focus(); break;
         case 'title-save': saveTitle(); break;
         case 'title-cancel': editingTitle = false; renderCurrentPlan(currentPlan); break;
@@ -2557,7 +2568,7 @@
         // メンバー
         case 'member-add': addMember(el.dataset.scope); break;
         case 'member-remove': removeMember(memberEl.dataset.scope, memberEl.dataset.memberId); break;
-        // ふたりのひとこと
+        // ひとことメモ
         case 'comment-add': addComment(); break;
         case 'comment-delete': deleteComment(el.closest('[data-comment-id]').dataset.commentId); break;
         // 見比べ表での評価
@@ -2620,8 +2631,8 @@
 
       // 初めて開いたときだけ、見比べをすぐ試せるよう見本のプランを2件用意する
       const samples = [
-        { hotelKey: 'fujiya', purpose: 'architecture', season: 'autumn', nights: '1night', companion: 'grand', pace: 'relaxed' },
-        { hotelKey: 'nikko', purpose: 'nature', season: 'autumn', nights: '1night', companion: 'grand', pace: 'active' }
+        { hotelKey: 'fujiya', purpose: 'architecture', season: 'autumn', nights: '1night', companion: 'couple', pace: 'relaxed' },
+        { hotelKey: 'nikko', purpose: 'nature', season: 'autumn', nights: '1night', companion: 'couple', pace: 'active' }
       ];
       historyPlans = samples.map(c => {
         const p = createPlan(c);
