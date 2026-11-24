@@ -1976,9 +1976,21 @@
       const list = memberList(scope);
       if (!list) return;
       if (list.length >= 8) { showToast('8人までです', '⚠'); return; }
-      list.push(makeMember());
+      const m = makeMember();
+      list.push(m);
+      // 左の「旅の仲間」で加えた人は、いま開いているプランにも加える（右側にすぐ出るように）
+      if (scope === 'global' && currentPlan && currentPlan.makers.length < 8 && !currentPlan.makers.some(x => x.id === m.id)) {
+        currentPlan.makers.push({ ...m });
+        touch(currentPlan);
+      }
       saveState();
-      if (scope === 'global') renderMembersPanel(); else renderCurrentPlan(currentPlan);
+      if (scope === 'global') {
+        renderMembersPanel();
+        rerenderPlanKeepingInputs();
+        renderHistoryCards();
+      } else {
+        renderCurrentPlan(currentPlan);
+      }
       const rows = document.querySelectorAll(`[data-scope="${scope}"][data-member-id] input`);
       if (rows.length) rows[rows.length - 1].focus();
     }
@@ -1999,8 +2011,58 @@
       const list = row && memberList(row.dataset.scope);
       const m = list && list.find(x => x.id === row.dataset.memberId);
       if (!m) return;
-      if (el.dataset.memberField === 'name') m.name = str(el.value, 30);
+      if (el.dataset.memberField === 'name') {
+        m.name = str(el.value, 30);
+        syncMemberName(m.id, m.name);
+      }
       scheduleMemberSave();
+      scheduleNameRender(row.dataset.scope);
+    }
+
+    // 右のプランを描き直す。書きかけの入力（ひとことメモ・予定の編集欄・名前の変更欄など）は消さずに引き継ぐ
+    function rerenderPlanKeepingInputs() {
+      const box = document.getElementById('plan-container');
+      const keyOf = el => {
+        const form = el.closest('[data-step-form]');
+        if (form) return `step:${form.dataset.stepId || 'new' + form.dataset.dayIndex}:${el.name}`;
+        const row = el.closest('[data-member-id]');
+        if (row) return `member:${row.dataset.memberId}:${el.dataset.memberField}`;
+        const photo = el.closest('[data-photo-id]');
+        if (photo) return `photo:${photo.dataset.photoId}`;
+        return el.id ? `id:${el.id}` : null;
+      };
+      const saved = new Map();
+      box.querySelectorAll('input:not([type=file]), textarea, select').forEach(el => {
+        const k = keyOf(el);
+        if (k) saved.set(k, el.value);
+      });
+      const active = document.activeElement && box.contains(document.activeElement) ? keyOf(document.activeElement) : null;
+      renderCurrentPlan(currentPlan);
+      box.querySelectorAll('input:not([type=file]), textarea, select').forEach(el => {
+        const k = keyOf(el);
+        if (!k || !saved.has(k)) return;
+        // 選択肢の場合は、その値が今も選べるときだけ戻す
+        if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === saved.get(k))) return;
+        el.value = saved.get(k);
+        if (k === active) el.focus();
+      });
+    }
+
+    // 同じ人（同じID）の名前を、旅の仲間の欄とすべてのプランでそろえる
+    function syncMemberName(memberId, name) {
+      members.forEach(x => { if (x.id === memberId) x.name = name; });
+      historyPlans.forEach(p => p.makers.forEach(x => { if (x.id === memberId) x.name = name; }));
+    }
+
+    // 入力中の欄は描き直さず、ほかの場所だけ少し待ってから描き直す（入力が途切れないように）
+    let nameRenderTimer = null;
+    function scheduleNameRender(scope) {
+      clearTimeout(nameRenderTimer);
+      nameRenderTimer = setTimeout(() => {
+        if (scope === 'global') rerenderPlanKeepingInputs();
+        else renderMembersPanel();
+        renderHistoryCards();
+      }, 300);
     }
 
     // --- ひとことメモ ---
