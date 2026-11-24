@@ -1063,7 +1063,7 @@
     const RETURN_RE = /帰路/;
     const CHECKOUT_RE = /[＆・]?チェックアウト[＆・]?/;
 
-    function buildDays(hotel, nights, pace) {
+    function buildDays(hotel, nights, pace, companion = 'other') {
       const it = hotel.itinerary;
       const copy = s => makeStep(s.time, s.action, s.detail);
       const lastOf = arr => arr[arr.length - 1];
@@ -1123,8 +1123,90 @@
       }
 
       const skipped = pace === 'relaxed' ? applyRelaxedPace(days) : [];
+      applyCompanion(days, companion);
       return { days, skipped };
     }
+
+    // いっしょに行く人に合わせて、予定を加えたり説明を書き足したりする。
+    // ホテル固有の事実は増やさず、どのホテルにも当てはまる一般的な内容にとどめる。
+    const COMPANION_PLANS = {
+      couple: {
+        note: 'ふたり旅に合わせて、記念の写真を撮る時間を入れています。',
+        afterCheckin: ['ロビーや庭で、ふたりの記念写真を一枚', 'ホテルの方に頼むと撮ってもらえることも。ふたり並んだ写真は、意外と少ないものです。']
+      },
+      solo: {
+        note: 'ひとり旅に合わせて、自分のペースで過ごす時間を入れています。',
+        afterCheckin: ['館内の椅子や窓辺で、読書や日記の時間', '急がずに、好きなだけ。気になった場所に戻ってみるのも、ひとり旅ならでは。'],
+        dinnerAdd: 'ひとりの場合は、カウンター席や窓際の席を予約のときに相談すると、落ち着いて過ごせます。'
+      },
+      friends: {
+        note: '仲間との旅に合わせて、夜に語らいの時間を入れています。',
+        afterDinner: ['ラウンジや部屋で、語らいの時間', '昔の話や近況を、時間を気にせずゆっくりと。']
+      },
+      parent: {
+        note: '子どもとの旅に合わせて、思い出話の時間を入れています。',
+        afterDinner: ['家族の思い出話の時間', '昔の家族旅行の写真を持っていくと、話がはずみます。']
+      },
+      grand: {
+        note: '孫との旅に合わせて、いっしょに楽しめる「館内探検」を入れています。',
+        afterCheckin: ['孫といっしょに館内探検', '古い家具や階段、めずらしい飾りを探して歩く。建物の昔話をするよい機会にも。'],
+        dinnerAdd: '子ども向けの料理や子ども料金があるかは、予約のときに確認を。'
+      },
+      three: {
+        note: '三世代の旅に合わせて、館内探検とみんなの記念撮影を入れています。',
+        afterCheckin: ['孫といっしょに館内探検', '古い家具や階段、めずらしい飾りを探して歩く。建物の昔話をするよい機会にも。'],
+        dinnerAdd: '大人数なので、個室や席の並びは予約のときに相談を。子ども向けの料理があるかも確認しておくと安心です。',
+        lastMorning: ['みんなで記念撮影', '玄関やロビーなど、建物がよく写る場所で。三世代そろった写真は、きっと宝物になります。']
+      },
+      other: {}
+    };
+
+    function applyCompanion(days, companion) {
+      const rule = COMPANION_PLANS[companion];
+      if (!rule) return;
+      const all = days.flatMap((d, di) => d.steps.map((s, i) => ({ s, di, i })));
+      const find = re => all.find(x => re.test(x.s.action));
+      const addAfter = (ref, minutes, [action, detail]) => {
+        const base = toMin(ref.s.time) ?? 12 * 60;
+        insertByTime(days[ref.di].steps, makeStep(toTime(base + minutes), action, detail));
+      };
+
+      // チェックインのあと（日帰りは館内見学のあと）
+      const checkin = find(/チェックイン/) || find(/館内の見どころ/);
+      if (rule.afterCheckin && checkin) addAfter(checkin, 30, rule.afterCheckin);
+
+      // 1日目の夕食（名前に「夕食」がないホテルもあるため、夕方の時間帯の予定でも探す）。
+      // 日帰りは夕食がないので、ホテルでの昼食を代わりに使う
+      const dinner = find(/夕食|ディナー/) || (days.length > 1 ? all.find(x => x.di === 0 && !RETURN_RE.test(x.s.action) && (toMin(x.s.time) ?? 0) >= 17 * 60 + 30 && (toMin(x.s.time) ?? 0) <= 19 * 60 + 30) : null);
+      const meal = dinner || find(/昼食またはお茶/);
+      if (rule.dinnerAdd && meal) {
+        meal.s.detail = `${meal.s.detail}${meal.s.detail ? '　' : ''}※${rule.dinnerAdd}`;
+      }
+      if (rule.afterDinner && meal) {
+        const [action, detail] = rule.afterDinner;
+        addAfter(meal, dinner ? 120 : 45, dinner ? rule.afterDinner : [action.replace('ラウンジや部屋で、', 'ラウンジで、'), detail]);
+      }
+
+      // 最終日の帰る前
+      if (rule.lastMorning && days.length > 1) {
+        const last = days[days.length - 1].steps;
+        const backIdx = last.length - 1;
+        const prev = last[backIdx - 1] || last[backIdx];
+        const t = Math.max(9 * 60, (toMin(prev.time) ?? 10 * 60) + 15);
+        last.splice(backIdx, 0, makeStep(toTime(Math.min(t, (toMin(last[backIdx].time) ?? t + 30) - 15)), ...rule.lastMorning));
+      }
+    }
+
+    // いっしょに行く人ごとの、一般的な心がけ
+    const COMPANION_TIPS = {
+      couple: '記念日が近ければ、予約のときに伝えておくと相談にのってもらえることがあります。',
+      solo: '自分のペースがいちばん。行き先と帰る時間を、家族や知人に伝えておくと安心です。',
+      friends: '部屋割りや支払いの方法は、出発前に決めておくと気楽です。',
+      parent: '重い荷物や乗り換えの手配は、遠慮せず子どもに頼りましょう。',
+      grand: '孫の好きなものを一つ旅程に入れると、いっしょに楽しめます。',
+      three: '大人数の旅は移動に時間がかかります。予定は少なめに、集合は早めに。',
+      other: ''
+    };
 
     // ゆったりペース：遠出（ホテル外の見物）は1日1か所にしぼり、そのあとに休憩をはさむ。
     // 朝8時半より前の散策も外す。外した行程は「外した候補」として返し、あとで戻せるようにする。
@@ -1183,7 +1265,7 @@
       const hotel = HOTELS_DATA[hotelKey];
       const title = `${hotel.name}で過ごす${LABELS.seasonTitle[cond.season]}の${LABELS.nights[cond.nights]} 〜${LABELS.companionTitle[cond.companion]} ${LABELS.purposeTitle[cond.purpose]}〜`;
       const now = new Date().toISOString();
-      const built = buildDays(hotel, cond.nights, cond.pace);
+      const built = buildDays(hotel, cond.nights, cond.pace, cond.companion);
       return {
         id: newId('plan'),
         createdAt: now,
@@ -1656,12 +1738,14 @@
         <div class="mb-8">
           ${sectionTitle('旅程（自由に書き直せます）', 'bg-classic-burgundy')}
           <p class="text-sm text-gray-600 mb-1">${esc(paceNote)}</p>
+          ${(COMPANION_PLANS[plan.companion] || {}).note ? `<p class="text-sm text-gray-600 mb-1">👥 ${esc(COMPANION_PLANS[plan.companion].note)}</p>` : ''}
           <p class="text-sm text-gray-600 mb-3">
             だれの希望か：${voiceText(plan)}
           </p>
           <div class="space-y-5">${renderDays(plan)}</div>
           ${renderSkipped(plan)}
           <p class="text-sm text-gray-700 mt-4 bg-[#F4EFE6] rounded-lg p-3">🧳 <strong>季節のひとこと</strong>：${esc(SEASON_TIPS[plan.season])}</p>
+          ${COMPANION_TIPS[plan.companion] ? `<p class="text-sm text-gray-700 mt-2 bg-[#F4EFE6] rounded-lg p-3">👥 <strong>${esc(LABELS.companion[plan.companion])}の旅のひとこと</strong>：${esc(COMPANION_TIPS[plan.companion])}</p>` : ''}
         </div>
 
         ${renderComments(plan)}
@@ -2295,6 +2379,7 @@
           if (s.note) text += `　💬 ${w.name}：${s.note}\n`;
         });
       });
+      if (COMPANION_TIPS[plan.companion]) text += `\n■ ${LABELS.companion[plan.companion]}の旅のひとこと：${COMPANION_TIPS[plan.companion]}\n`;
       text += `\n■ 夕食：${h.gourmet.dinner}\n`;
       text += `■ おすすめのお土産：\n`;
       h.souvenirs.forEach(s => { text += `・${s.name}\n`; });
